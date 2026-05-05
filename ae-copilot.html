@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AE Co-pilot — Insphere</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Design Tokens ─────────────────────────────────────────── */
+    :root {
+      --background:   #faf9f4;
+      --foreground:   #09090b;
+      --primary:      #2563eb;
+      --primary-fg:   #ffffff;
+      --border:       #e4e4e7;
+      --slate-100:    #f1f5f9;
+      --slate-200:    #e2e8f0;
+      --slate-300:    #cbd5e1;
+      --slate-600:    #475569;
+      --slate-700:    #334155;
+      --slate-800:    #1e293b;
+      --slate-900:    #0f172a;
+      --blue-50:      #eff6ff;
+      --blue-950:     #19173d;
+      --muted-fg:     #71717a;
+      --radius:       8px;
+      --font-sans:    "SF Pro Display", "SF Pro Text", Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+
+    /* ── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; width: 100%; overflow: hidden; }
+    body {
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      background: #fff;
+    }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+    input  { font-family: inherit; border: none; outline: none; background: transparent; }
+    img    { display: block; max-width: none; }
+
+    /* ── Layout ────────────────────────────────────────────────── */
+    .app-shell {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    /* ── SIDEBAR ───────────────────────────────────────────────── */
+    .sidebar {
+      flex-shrink: 0;
+      width: 256px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sidebar-top { display: flex; flex-direction: column; gap: 8px; }
+
+    .sidebar-section { padding: 16px; display: flex; flex-direction: column; gap: 20px; }
+    .sidebar-section-nav { padding: 16px; display: flex; flex-direction: column; }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 9999px;
+      border: 0.5px solid var(--slate-300);
+      color: #52525b;
+      transition: background 0.15s;
+    }
+    .back-btn:hover { background: #f4f4f5; }
+    .back-btn svg { width: 14px; height: 14px; }
+
+    .sidebar-divider { padding: 4px 16px; }
+    .sidebar-divider-line { height: 1px; background: var(--border); width: 100%; }
+
+    /* nav items */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 224px;
+      padding: 8px;
+      border-radius: var(--radius);
+      transition: background 0.12s;
+    }
+    .nav-item:hover { background: var(--slate-100); }
+    .nav-item .nav-icon { width: 24px; height: 24px; flex-shrink: 0; }
+    .nav-item .nav-label {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 20px;
+      color: var(--foreground);
+    }
+
+    /* featured agents */
+    .section-label {
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 20px;
+      color: var(--muted-fg);
+      padding: 8px 8px;
+    }
+
+    .nav-item-text { position: relative; display: flex; align-items: center; width: 224px; }
+    .active-indicator {
+      position: absolute;
+      left: -16px;
+      width: 3px;
+      height: 20px;
+      border-radius: 9999px;
+      background: var(--foreground);
+    }
+
+    /* footer */
+    .sidebar-footer { display: flex; flex-direction: column; gap: 8px; }
+
+    /* chrome promo */
+    .chrome-card {
+      margin: 0 16px;
+      background: var(--blue-50);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .chrome-card-inner { display: flex; align-items: center; gap: 12px; }
+    .chrome-logo { width: 38px; height: 33px; flex-shrink: 0; filter: drop-shadow(0px 4px 2px rgba(0,0,0,0.12)); }
+    .chrome-text { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+    .chrome-row { display: flex; align-items: center; justify-content: space-between; }
+    .chrome-title {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 20px;
+      color: var(--blue-950);
+      white-space: nowrap;
+      font-family: Inter, sans-serif;
+    }
+    .chrome-subtitle {
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 16px;
+      color: var(--slate-700);
+      font-family: Inter, sans-serif;
+    }
+    .icon-btn-sm {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+      border-radius: 9999px;
+    }
+    .icon-btn-sm svg { width: 16px; height: 16px; color: var(--blue-950); }
+
+    /* user dropdown */
+    .user-dropdown-wrap { padding: 16px; }
+    .user-dropdown {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      border-radius: var(--radius);
+      transition: background 0.12s;
+    }
+    .user-dropdown:hover { background: var(--slate-100); }
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .user-avatar {
+      width: 40px; height: 40px;
+      border-radius: 6px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .user-text { display: flex; flex-direction: column; gap: 2px; font-family: Inter, sans-serif; }
+    .user-name  { font-size: 14px; font-weight: 500; line-height: 20px; color: var(--muted-fg); }
+    .user-email { font-size: 12px; font-weight: 500; line-height: 16px; color: var(--muted-fg); }
+    .chevron-icon { width: 20px; height: 20px; flex-shrink: 0; }
+
+    /* ── MAIN CONTENT ──────────────────────────────────────────── */
+    .main-content {
+      flex: 1;
+      margin: 8px 8px 8px 0;
+      display: flex;
+      flex-direction: column;
+      border-radius: var(--radius);
+      border: 1px solid var(--slate-200);
+      background: #f4f9ff;
+      box-shadow: 0px 1px 2px 0px rgba(0,0,0,0.05);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ellipse decorative bg */
+    .ellipse-bg {
+      position: absolute;
+      left: 270px;
+      top: 315px;
+      width: 1204px;
+      height: 1204px;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    /* header */
+    .content-header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      border-bottom: 1px solid rgba(226,232,240,0.6);
+      flex-shrink: 0;
+    }
+    .insphere-logo { height: 24px; }
+
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-ghost {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: 0px 1px 2px 0px rgba(0,0,0,0.05);
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 24px;
+      color: var(--slate-900);
+      white-space: nowrap;
+      transition: background 0.12s;
+    }
+    .btn-ghost:hover { background: #f8fafc; }
+    .btn-ghost svg { width: 16px; height: 16px; }
+
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      background: var(--primary);
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 24px;
+      color: #fff;
+      white-space: nowrap;
+      transition: background 0.12s;
+    }
+    .btn-primary:hover { background: #1d4ed8; }
+
+    /* center hero */
+    .center-body {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 24px;
+    }
+
+    .hero-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 84px;
+      padding: 120px 160px 0;
+      width: 100%;
+    }
+
+    /* agent title row */
+    .agent-title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .agent-icon { width: 24px; height: 24px; flex-shrink: 0; }
+    .agent-title {
+      font-size: 24px;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: -0.6px;
+      color: var(--slate-800);
+      white-space: nowrap;
+    }
+
+    /* greeting */
+    .greeting-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 21px;
+      width: 100%;
+    }
+    .greeting-text-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 9px;
+    }
+    .greeting-hi {
+      font-size: 24px;
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: -0.6px;
+      color: var(--slate-800);
+      text-align: center;
+    }
+    .greeting-headline {
+      font-size: 42px;
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: -1.05px;
+      white-space: nowrap;
+      background: linear-gradient(to right, #1e293b 0%, #0924ad 89.46%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* chips */
+    .chips-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--slate-300);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      box-shadow: 0px 3px 11px 0px rgba(0,0,0,0.04);
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 24px;
+      color: var(--slate-900);
+      white-space: nowrap;
+      transition: background 0.12s;
+      background: rgba(255,255,255,0.4);
+    }
+    .chip:hover { background: rgba(255,255,255,0.7); }
+    .chip svg { width: 16px; height: 16px; color: #475569; flex-shrink: 0; }
+
+    /* chat input */
+    .input-bar-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 0 24px;
+    }
+    .input-bar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 720px;
+      border-radius: 38px;
+      border: 1px solid #e3edff;
+      padding: 8px;
+      background: linear-gradient(175.26deg, rgba(255,255,255,0.9) 13.37%, rgba(255,255,255,0.35) 76.16%);
+      backdrop-filter: blur(15.76px);
+      -webkit-backdrop-filter: blur(15.76px);
+      filter: drop-shadow(0px 3px 6px rgba(0,0,0,0.04));
+    }
+    .input-field {
+      flex: 1;
+      padding: 0 12px;
+      font-size: 14px;
+      font-weight: 300;
+      line-height: normal;
+      letter-spacing: -0.6px;
+      color: #475569;
+    }
+    .input-field::placeholder { color: #94a3b8; }
+    .input-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .mic-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 36px;
+      border: 1px solid var(--slate-300);
+      transition: background 0.12s;
+    }
+    .mic-btn:hover { background: rgba(255,255,255,0.7); }
+    .mic-btn svg { width: 16px; height: 16px; color: #64748b; }
+    .send-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 36px;
+      background: var(--slate-900);
+      transition: background 0.12s;
+    }
+    .send-btn:hover { background: #1e293b; }
+    .send-btn svg { width: 16px; height: 16px; color: #fff; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+
+      <!-- Back + top nav -->
+      <div class="sidebar-section">
+        <button class="back-btn">
+          <!-- arrow-left icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M5 12l7 7M5 12l7-7"/>
+          </svg>
+        </button>
+
+        <div>
+          <div class="nav-item">
+            <img src="http://localhost:3845/assets/516ef21f0ca26aa81e755655fa65a991dcff8237.svg" alt="" class="nav-icon" />
+            <span class="nav-label">AI Agents</span>
+          </div>
+          <div class="nav-item">
+            <img src="http://localhost:3845/assets/377f641dfa105f0cfb47dff93d10d62123205af2.svg" alt="" class="nav-icon" />
+            <span class="nav-label">Integration</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="sidebar-divider"><div class="sidebar-divider-line"></div></div>
+
+      <!-- Featured agents -->
+      <div class="sidebar-section-nav">
+        <div class="section-label">Featured Agents</div>
+
+        <div class="nav-item-text">
+          <div class="active-indicator"></div>
+          <div class="nav-item" style="background: #f1f5f9; width: 224px;">
+            <span class="nav-label">AE Co-pilot</span>
+          </div>
+        </div>
+
+        <div class="nav-item-text">
+          <div class="nav-item" style="width: 224px;">
+            <span class="nav-label">Lead Enrichment</span>
+          </div>
+        </div>
+
+        <div class="nav-item-text">
+          <div class="nav-item" style="width: 224px;">
+            <span class="nav-label">RFP Response Agent</span>
+          </div>
+        </div>
+
+        <div class="nav-item-text">
+          <div class="nav-item" style="width: 224px;">
+            <span class="nav-label">Pitch Deck Generator</span>
+          </div>
+        </div>
+
+        <div class="section-label">Featured Agents</div>
+      </div>
+
+    </div><!-- /sidebar-top -->
+
+    <!-- ── SIDEBAR FOOTER ──────────────────────────────────────────────── -->
+    <div class="sidebar-footer">
+
+      <!-- Chrome extension promo -->
+      <div class="chrome-card">
+        <div class="chrome-card-inner">
+          <img
+            src="http://localhost:3845/assets/1024b62b3a353b8874bcb44dc1b7ae465b7de6ce.svg"
+            alt="Chrome"
+            class="chrome-logo"
+          />
+          <div class="chrome-text">
+            <div class="chrome-row">
+              <span class="chrome-title">Insphere for Chrome</span>
+              <button class="icon-btn-sm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M7 17L17 7M17 7H7M17 7v10"/>
+                </svg>
+              </button>
+            </div>
+            <span class="chrome-subtitle">Available on Web Store</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="sidebar-divider"><div class="sidebar-divider-line"></div></div>
+
+      <!-- User dropdown -->
+      <div class="user-dropdown-wrap">
+        <button class="user-dropdown">
+          <div class="user-info">
+            <img
+              src="http://localhost:3845/assets/f38480e01909d57a7346fd3bb780c1e3d786d292.png"
+              alt="Erica"
+              class="user-avatar"
+            />
+            <div class="user-text">
+              <span class="user-name">Erica</span>
+              <span class="user-email">erica@example.com</span>
+            </div>
+          </div>
+          <img
+            src="http://localhost:3845/assets/fa6ecd9dd434595fd769c3f734bcb7275a5bfdea.svg"
+            alt=""
+            class="chevron-icon"
+          />
+        </button>
+      </div>
+
+    </div><!-- /sidebar-footer -->
+  </aside>
+
+  <!-- ── MAIN CONTENT ──────────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Decorative ellipse background blob -->
+    <img
+      src="http://localhost:3845/assets/4107989a57f798f804cc8cd53f0b97c3451e67a2.svg"
+      alt=""
+      class="ellipse-bg"
+    />
+
+    <!-- Header -->
+    <header class="content-header">
+      <!-- Insphere wordmark / logo -->
+      <img
+        src="http://localhost:3845/assets/58d073b90954a572cb2d885f1322914dd56c9a35.svg"
+        alt="Insphere"
+        class="insphere-logo"
+      />
+
+      <div class="header-actions">
+        <button class="btn-ghost">
+          <!-- history icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+            <path d="M12 7v5l4 2"/>
+          </svg>
+          view history
+        </button>
+        <button class="btn-primary">New Chat</button>
+      </div>
+    </header>
+
+    <!-- Center body -->
+    <div class="center-body">
+      <div class="hero-area">
+
+        <!-- AE Co-pilot heading -->
+        <div class="agent-title-row">
+          <img
+            src="http://localhost:3845/assets/b38a0a3828146ac727f7de5ac56956adf133b02b.svg"
+            alt=""
+            class="agent-icon"
+          />
+          <span class="agent-title">AE Co-pilot</span>
+        </div>
+
+        <!-- Greeting + headline + chips -->
+        <div class="greeting-block">
+          <div class="greeting-text-block">
+            <p class="greeting-hi">Hi there, Maaz</p>
+            <p class="greeting-headline">What would you like to know!</p>
+          </div>
+
+          <div class="chips-row">
+            <button class="chip">
+              <!-- building icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="2" width="18" height="20" rx="2"/>
+                <path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>
+              </svg>
+              Company Info
+            </button>
+
+            <button class="chip">
+              <!-- database icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+              </svg>
+              Past Project
+            </button>
+
+            <button class="chip">
+              <!-- globe icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+                <path d="M2 12h20"/>
+              </svg>
+              Web Search
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /hero-area -->
+
+      <!-- Chat input bar -->
+      <div class="input-bar-wrap">
+        <div class="input-bar">
+          <input
+            class="input-field"
+            type="text"
+            placeholder="How i can help you"
+          />
+          <div class="input-actions">
+            <button class="mic-btn">
+              <!-- mic icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="22"/>
+              </svg>
+            </button>
+            <button class="send-btn">
+              <!-- arrow-right icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /center-body -->
+  </main>
+
+</div>
+</body>
+</html>

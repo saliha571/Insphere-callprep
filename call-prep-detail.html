@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Call Brief — Insphere</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ══════════════════════════════════════════════════════════
+       LAYER 1 — PRIMITIVE TOKENS
+    ══════════════════════════════════════════════════════════ */
+    :root {
+      --spacing-0:    0px;    --spacing-0-5: 0.125rem; --spacing-1:   0.25rem;
+      --spacing-1-5:  0.375rem; --spacing-2: 0.5rem;   --spacing-2-5: 0.625rem;
+      --spacing-3:    0.75rem;  --spacing-3-5:0.875rem; --spacing-4:  1rem;
+      --spacing-5:    1.25rem;  --spacing-6:  1.5rem;  --spacing-7:   1.75rem;
+      --spacing-8:    2rem;     --spacing-9:  2.25rem; --spacing-10:  2.5rem;
+      --spacing-12:   3rem;     --spacing-16: 4rem;
+
+      --text-2xs: 0.625rem; --text-xs: 0.75rem; --text-sm: 0.875rem;
+      --text-base: 1rem;    --text-lg: 1.125rem; --text-xl: 1.25rem;
+      --text-2xl: 1.5rem;   --text-3xl: 1.875rem;
+
+      --font-light: 300; --font-normal: 400; --font-medium: 500;
+      --font-semibold: 600; --font-bold: 700;
+
+      --leading-none: 1; --leading-tight: 1.25; --leading-normal: 1.5;
+      --leading-relaxed: 1.625;
+      --tracking-tight: -0.025em; --tracking-wide: 0.025em;
+      --tracking-wider: 0.05em;  --tracking-widest: 0.1em;
+
+      --radius-none: 0px; --radius-sm: 0.25rem; --radius-md: 0.375rem;
+      --radius-lg: 0.5rem; --radius-xl: 0.75rem; --radius-2xl: 1rem;
+      --radius-full: 9999px;
+
+      --shadow-none: none;
+      --shadow-xs:   0 1px 2px 0 #1018280d;
+      --shadow-sm:   0 1px 2px 0 #0000000d;
+      --shadow-md:   0 2px 4px -1px #0000000f, 0 0 15px 2px #0000001a;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       LAYER 2 — SEMANTIC TOKENS
+    ══════════════════════════════════════════════════════════ */
+    :root {
+      --background:          #faf9f4;
+      --foreground:          #020617;
+      --card:                #ffffff;
+      --card-foreground:     #020617;
+      --primary:             #2563eb;
+      --primary-foreground:  #f8fafc;
+      --secondary:           #f1f5f9;
+      --secondary-foreground:#0f172a;
+      --muted:               #f1f5f9;
+      --muted-foreground:    #64748b;
+      --accent:              #f1f5f9;
+      --accent-foreground:   #0f172a;
+      --success:             #16a34a;
+      --success-foreground:  #ffffff;
+      --warning:             #d97706;
+      --destructive:         #dc2626;
+      --border:              #e2e8f0;
+      --input:               #e2e8f0;
+      --ring:                #6366f1;
+      --radius:              0.5rem;
+      --chart-1:             #f97316;
+      --chart-1-bg:          #fff7ed;
+      --chart-1-border:      #fed7aa;
+      --sidebar:             #ffffff;
+      --sidebar-foreground:  #020617;
+      --sidebar-primary:     #0f172a;
+      --sidebar-accent:      #f1f5f9;
+      --sidebar-accent-foreground: #0f172a;
+      --sidebar-border:      #e2e8f0;
+      --sidebar-muted-fg:    #64748b;
+      --font-family: "SF Pro Display","SF Pro Text",Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       LAYER 3 — COMPONENT TOKENS
+    ══════════════════════════════════════════════════════════ */
+    :root {
+      --btn-bg:          var(--primary);
+      --btn-fg:          var(--primary-foreground);
+      --btn-radius:      var(--radius);
+      --btn-px:          var(--spacing-4);
+      --btn-py:          var(--spacing-2);
+      --btn-font-size:   var(--text-sm);
+      --btn-font-weight: var(--font-medium);
+      --btn-shadow:      var(--shadow-xs);
+      --btn-outline-bg:  var(--card);
+      --btn-outline-fg:  var(--foreground);
+      --btn-outline-border: var(--border);
+
+      --card-radius:  calc(var(--radius) + 2px);
+      --card-shadow:  var(--shadow-sm);
+      --card-border:  var(--border);
+
+      --sidebar-item-h:      var(--spacing-8);
+      --sidebar-item-px:     var(--spacing-3);
+      --sidebar-item-radius: calc(var(--radius) - 2px);
+      --sidebar-item-size:   var(--text-sm);
+      --sidebar-item-weight: var(--font-medium);
+      --sidebar-item-gap:    var(--spacing-2);
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       BASE
+    ══════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: var(--font-family);
+      font-size: var(--text-base);
+      line-height: var(--leading-normal);
+      background: var(--background);
+      color: var(--foreground);
+      -webkit-font-smoothing: antialiased;
+    }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+    input, textarea { font-family: inherit; border: none; outline: none; background: transparent; }
+    .focus-ring:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+    /* ══════════════════════════════════════════════════════════
+       LAYOUT
+    ══════════════════════════════════════════════════════════ */
+    .app-shell { display: flex; height: 100vh; width: 100vw; overflow: hidden; background: var(--card); }
+
+    /* ══════════════════════════════════════════════════════════
+       SIDEBAR (identical token usage to dashboard)
+    ══════════════════════════════════════════════════════════ */
+    .sidebar {
+      flex-shrink: 0; width: 180px; height: 100%;
+      display: flex; flex-direction: column; justify-content: space-between;
+      background: var(--sidebar); color: var(--sidebar-foreground);
+    }
+    .sidebar-top { display: flex; flex-direction: column; }
+    .sidebar-icon-section { display: flex; flex-direction: column; gap: var(--spacing-0-5); padding: var(--spacing-3) var(--spacing-3) var(--spacing-2); }
+    .back-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: var(--spacing-8); height: var(--spacing-8);
+      border-radius: var(--radius-full); border: 0.5px solid var(--border);
+      color: var(--muted-foreground); margin-bottom: var(--spacing-2); transition: background 0.15s;
+    }
+    .back-btn:hover { background: var(--sidebar-accent); }
+    .back-btn svg { width: 14px; height: 14px; }
+    .sidebar-nav-item {
+      display: flex; align-items: center; gap: var(--sidebar-item-gap);
+      height: var(--sidebar-item-h); padding: 0 var(--sidebar-item-px);
+      border-radius: var(--sidebar-item-radius);
+      font-size: var(--sidebar-item-size); font-weight: var(--sidebar-item-weight);
+      color: var(--sidebar-foreground); transition: background 0.12s;
+    }
+    .sidebar-nav-item:hover { background: var(--sidebar-accent); }
+    .sidebar-nav-item svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--muted-foreground); }
+    .sidebar-divider { padding: var(--spacing-1) var(--spacing-3); }
+    .sidebar-divider-line { height: 1px; background: var(--sidebar-border); }
+    .sidebar-group { padding: var(--spacing-2); display: flex; flex-direction: column; gap: var(--spacing-1); }
+    .sidebar-group-label {
+      font-size: var(--text-xs); font-weight: var(--font-medium); color: var(--sidebar-muted-fg);
+      padding: 0 var(--spacing-3); height: var(--sidebar-item-h);
+      display: flex; align-items: center;
+      letter-spacing: var(--tracking-wider); text-transform: uppercase;
+    }
+    .sidebar-text-item { position: relative; display: flex; align-items: center; }
+    .active-bar {
+      position: absolute; left: calc(-1 * var(--spacing-2));
+      width: 3px; height: var(--spacing-5);
+      border-radius: var(--radius-full); background: var(--sidebar-primary);
+    }
+    .sidebar-text-item-btn {
+      display: flex; align-items: center; width: 100%;
+      height: var(--sidebar-item-h); padding: 0 var(--sidebar-item-px);
+      border-radius: var(--sidebar-item-radius);
+      font-size: var(--sidebar-item-size); font-weight: var(--sidebar-item-weight);
+      color: var(--sidebar-foreground); transition: background 0.12s;
+    }
+    .sidebar-text-item-btn:hover { background: var(--sidebar-accent); }
+    .sidebar-text-item-btn.active { background: var(--sidebar-accent); }
+    .sidebar-footer { display: flex; flex-direction: column; gap: var(--spacing-1-5); }
+    .chrome-card { margin: 0 var(--spacing-2-5); background: #eff6ff; border-radius: var(--radius); padding: var(--spacing-3); }
+    .chrome-inner { display: flex; align-items: center; gap: var(--spacing-2-5); }
+    .chrome-avatar { width: var(--spacing-8); height: var(--spacing-8); border-radius: var(--radius-md); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: var(--text-base); }
+    .chrome-text { flex: 1; min-width: 0; }
+    .chrome-row { display: flex; align-items: center; justify-content: space-between; }
+    .chrome-title { font-size: var(--text-xs); font-weight: var(--font-semibold); color: #19173d; }
+    .chrome-sub { font-size: var(--text-2xs); color: var(--muted-foreground); margin-top: var(--spacing-0-5); }
+    .user-footer { padding: var(--spacing-2) var(--spacing-2-5) var(--spacing-3); }
+    .user-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: var(--spacing-1-5) var(--spacing-2); border-radius: var(--sidebar-item-radius); transition: background 0.12s; }
+    .user-btn:hover { background: var(--sidebar-accent); }
+    .user-left { display: flex; align-items: center; gap: var(--spacing-2-5); }
+    .user-avatar { width: var(--spacing-8); height: var(--spacing-8); border-radius: var(--radius-md); background: var(--primary); color: var(--primary-foreground); font-size: var(--text-sm); font-weight: var(--font-semibold); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .user-info { display: flex; flex-direction: column; }
+    .user-name  { font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--sidebar-foreground); line-height: var(--leading-tight); }
+    .user-email { font-size: var(--text-2xs); color: var(--muted-foreground); }
+    .chevron svg { width: 16px; height: 16px; color: var(--muted-foreground); }
+
+    /* ══════════════════════════════════════════════════════════
+       MAIN CONTENT — DETAIL VIEW
+    ══════════════════════════════════════════════════════════ */
+    .main-content {
+      flex: 1; margin: var(--spacing-2) var(--spacing-2) var(--spacing-2) 0;
+      display: flex; flex-direction: column;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      background: #eef2fb; box-shadow: var(--shadow-sm); overflow: hidden;
+    }
+
+    /* ── HEADER ──────────────────────────────────────────── */
+    .content-header {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+      padding: var(--spacing-2-5) var(--spacing-5); border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.6); backdrop-filter: blur(8px);
+    }
+    .header-left { display: flex; align-items: center; gap: var(--spacing-3); }
+    .back-to-list {
+      display: flex; align-items: center; gap: var(--spacing-1-5);
+      font-size: var(--text-sm); font-weight: var(--font-medium);
+      color: var(--muted-foreground); transition: color 0.12s;
+      text-decoration: none;
+    }
+    .back-to-list:hover { color: var(--foreground); }
+    .back-to-list svg { width: 16px; height: 16px; }
+    .header-sep { width: 1px; height: 20px; background: var(--border); }
+    .call-meta { display: flex; align-items: center; gap: var(--spacing-2); }
+    .call-name { font-size: var(--text-base); font-weight: var(--font-semibold); color: var(--foreground); }
+    .call-sub  { font-size: var(--text-sm); color: var(--muted-foreground); }
+    .dot-sep   { width: 4px; height: 4px; border-radius: var(--radius-full); background: var(--muted-foreground); }
+    .badge-sm {
+      display: inline-flex; align-items: center; gap: var(--spacing-1);
+      padding: 2px var(--spacing-2);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs); font-weight: var(--font-semibold);
+      white-space: nowrap; border: 1px solid transparent;
+    }
+    .badge-disco-sm { color: var(--primary); background: #eff6ff; border-color: #bfdbfe; }
+    .badge-predc-sm { color: var(--chart-1); background: var(--chart-1-bg); border-color: var(--chart-1-border); }
+    .badge-dot-sm   { width: 5px; height: 5px; border-radius: var(--radius-full); background: currentColor; }
+
+    .header-right { display: flex; align-items: center; gap: var(--spacing-2); }
+    .icon-btn { display: flex; align-items: center; justify-content: center; width: var(--spacing-8); height: var(--spacing-8); border-radius: var(--radius); color: var(--muted-foreground); transition: background 0.12s; }
+    .icon-btn:hover { background: rgba(255,255,255,0.7); }
+    .icon-btn svg { width: 18px; height: 18px; }
+
+    /* ── PROGRESS BAR ─────────────────────────────────── */
+    .progress-strip {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      gap: var(--spacing-2-5); padding: var(--spacing-3) var(--spacing-5);
+      background: rgba(255,255,255,0.4); border-bottom: 1px solid var(--border);
+    }
+    .progress-item {
+      display: flex; align-items: center; gap: var(--spacing-2); cursor: pointer;
+    }
+    .progress-dot {
+      width: 28px; height: 28px;
+      border-radius: var(--radius-full);
+      display: flex; align-items: center; justify-content: center;
+      font-size: var(--text-xs); font-weight: var(--font-semibold);
+      border: 1.5px solid var(--border);
+      background: var(--card); color: var(--muted-foreground);
+      transition: all 0.2s;
+    }
+    .progress-dot.done    { background: var(--success); border-color: var(--success); color: var(--success-foreground); }
+    .progress-dot.current { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+    .progress-dot.done svg, .progress-dot.current svg { display: none; }
+    .progress-label {
+      font-size: var(--text-xs); font-weight: var(--font-medium);
+      color: var(--muted-foreground); white-space: nowrap;
+      transition: color 0.2s;
+    }
+    .progress-label.current { color: var(--primary); }
+    .progress-label.done    { color: var(--success); }
+    .progress-connector { width: 28px; height: 1px; background: var(--border); }
+    .progress-connector.done { background: var(--success); }
+
+    /* ── CHAT AREA ────────────────────────────────────── */
+    .chat-area {
+      flex: 1; overflow-y: auto; padding: var(--spacing-6) var(--spacing-5) var(--spacing-4);
+      display: flex; flex-direction: column; gap: var(--spacing-5);
+      scroll-behavior: smooth;
+    }
+
+    /* Agent message bubble — card tokens */
+    .agent-turn {
+      display: flex; flex-direction: column; gap: var(--spacing-3);
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      max-width: 720px;
+    }
+    .agent-turn.visible { opacity: 1; transform: translateY(0); }
+
+    .turn-header {
+      display: flex; align-items: center; gap: var(--spacing-2);
+    }
+    .agent-avatar {
+      width: var(--spacing-8); height: var(--spacing-8);
+      border-radius: var(--radius-full);
+      background: var(--primary); color: var(--primary-foreground);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .agent-avatar svg { width: 16px; height: 16px; }
+    .turn-meta { display: flex; flex-direction: column; }
+    .turn-agent-name { font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--foreground); }
+    .turn-label {
+      font-size: var(--text-2xs); font-weight: var(--font-semibold);
+      letter-spacing: var(--tracking-widest); text-transform: uppercase;
+      color: var(--muted-foreground);
+    }
+
+    /* Bubble — card shadow + radius */
+    .bubble {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--card-radius); box-shadow: var(--card-shadow);
+      padding: var(--spacing-4) var(--spacing-5);
+      font-size: var(--text-sm); line-height: var(--leading-relaxed);
+      color: var(--card-foreground); position: relative;
+    }
+
+    /* Typing cursor animation */
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .typing-cursor::after {
+      content: '▋';
+      display: inline-block;
+      color: var(--primary);
+      animation: blink 0.9s infinite;
+      margin-left: 2px;
+      font-size: 0.75em;
+    }
+
+    /* Action row below each turn */
+    .turn-actions {
+      display: flex; align-items: center; gap: var(--spacing-2-5);
+      opacity: 0; transform: translateY(4px);
+      transition: opacity 0.25s ease 0.2s, transform 0.25s ease 0.2s;
+    }
+    .turn-actions.visible { opacity: 1; transform: translateY(0); }
+
+    /* Keep going — primary button tokens */
+    .btn-keep-going {
+      display: flex; align-items: center; gap: var(--spacing-1-5);
+      padding: var(--btn-py) var(--btn-px);
+      border-radius: var(--btn-radius);
+      background: var(--btn-bg); color: var(--btn-fg);
+      font-size: var(--btn-font-size); font-weight: var(--btn-font-weight);
+      box-shadow: var(--btn-shadow); transition: opacity 0.15s;
+    }
+    .btn-keep-going:hover { opacity: 0.88; }
+    .btn-keep-going svg { width: 14px; height: 14px; }
+
+    /* Ask a question — outline button tokens */
+    .btn-ask {
+      display: flex; align-items: center; gap: var(--spacing-1-5);
+      padding: var(--btn-py) var(--btn-px);
+      border-radius: var(--btn-radius);
+      background: var(--btn-outline-bg); color: var(--btn-outline-fg);
+      border: 1px solid var(--btn-outline-border);
+      font-size: var(--btn-font-size); font-weight: var(--btn-font-weight);
+      box-shadow: var(--shadow-xs); transition: background 0.12s;
+    }
+    .btn-ask:hover { background: var(--accent); }
+    .btn-ask svg { width: 14px; height: 14px; }
+
+    /* User message bubble */
+    .user-turn {
+      display: flex; justify-content: flex-end;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .user-turn.visible { opacity: 1; transform: translateY(0); }
+    .user-bubble {
+      background: var(--primary); color: var(--primary-foreground);
+      border-radius: var(--card-radius);
+      padding: var(--spacing-3) var(--spacing-4);
+      font-size: var(--text-sm); line-height: var(--leading-relaxed);
+      max-width: 520px; box-shadow: var(--shadow-xs);
+    }
+
+    /* Completion state */
+    .briefing-complete {
+      display: flex; flex-direction: column; align-items: center;
+      gap: var(--spacing-2); padding: var(--spacing-4) var(--spacing-5);
+      background: var(--success); border-radius: var(--radius);
+      margin: 0 auto; max-width: 480px;
+      opacity: 0; transform: translateY(6px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .briefing-complete.visible { opacity: 1; transform: translateY(0); }
+    .briefing-complete-text {
+      font-size: var(--text-sm); font-weight: var(--font-medium);
+      color: var(--success-foreground); text-align: center;
+    }
+
+    /* ── INPUT BAR ─────────────────────────────────────── */
+    .input-area {
+      flex-shrink: 0; padding: var(--spacing-3) var(--spacing-5) var(--spacing-4);
+      border-top: 1px solid var(--border);
+      background: rgba(255,255,255,0.4); backdrop-filter: blur(8px);
+    }
+    .input-bar {
+      display: flex; align-items: center; gap: var(--spacing-2);
+      background: linear-gradient(175deg, rgba(255,255,255,0.9) 13%, rgba(255,255,255,0.4) 76%);
+      border: 1px solid #e3edff;
+      border-radius: var(--radius-full);
+      padding: var(--spacing-2) var(--spacing-2) var(--spacing-2) var(--spacing-4);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .input-bar:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1), 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .input-field {
+      flex: 1; font-size: var(--text-sm); color: var(--foreground);
+      background: transparent; resize: none; overflow: hidden;
+      line-height: var(--leading-normal);
+    }
+    .input-field::placeholder { color: var(--muted-foreground); }
+    .input-hint {
+      font-size: var(--text-xs); color: var(--muted-foreground);
+      padding: 0 var(--spacing-2); white-space: nowrap;
+    }
+    .input-send {
+      display: flex; align-items: center; justify-content: center;
+      width: var(--spacing-8); height: var(--spacing-8);
+      border-radius: var(--radius-full);
+      background: var(--foreground); color: var(--card);
+      flex-shrink: 0; transition: background 0.12s;
+    }
+    .input-send:hover { background: var(--primary); }
+    .input-send svg { width: 16px; height: 16px; }
+    .input-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* disabled state until briefing complete or ask tapped */
+    .input-area.locked .input-field { color: var(--muted-foreground); }
+    .input-area.locked .input-bar {
+      border-color: var(--border);
+      background: rgba(241,245,249,0.7);
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-icon-section">
+        <a href="call-prep.html" class="back-btn focus-ring">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M5 12l7 7M5 12l7-7"/></svg>
+        </a>
+        <div class="sidebar-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>AI Agents</div>
+        <div class="sidebar-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Integration</div>
+        <div class="sidebar-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>User Management</div>
+        <div class="sidebar-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Prompt Playground</div>
+        <div class="sidebar-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</div>
+      </div>
+      <div class="sidebar-divider"><div class="sidebar-divider-line"></div></div>
+      <div class="sidebar-group">
+        <span class="sidebar-group-label">Sales</span>
+        <div class="sidebar-text-item"><div class="sidebar-text-item-btn">AE Co-pilot</div></div>
+        <div class="sidebar-text-item"><div class="active-bar"></div><div class="sidebar-text-item-btn active">Call Preparation</div></div>
+        <div class="sidebar-text-item"><div class="sidebar-text-item-btn">Discovery Call QA</div></div>
+        <div class="sidebar-text-item"><div class="sidebar-text-item-btn">Lead Enrichment</div></div>
+        <div class="sidebar-text-item"><div class="sidebar-text-item-btn">Pitch Deck</div></div>
+      </div>
+      <div class="sidebar-divider"><div class="sidebar-divider-line"></div></div>
+      <div class="sidebar-group">
+        <span class="sidebar-group-label">HR</span>
+        <div class="sidebar-text-item"><div class="sidebar-text-item-btn">People Buddy</div></div>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="chrome-card"><div class="chrome-inner"><div class="chrome-avatar">🌐</div><div class="chrome-text"><div class="chrome-row"><span class="chrome-title">Insphere for Chrome</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#19173d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></div><div class="chrome-sub">Available on Web Store</div></div></div></div>
+      <div class="sidebar-divider"><div class="sidebar-divider-line"></div></div>
+      <div class="user-footer"><button class="user-btn focus-ring"><div class="user-left"><div class="user-avatar">S</div><div class="user-info"><span class="user-name">Saliha Shahzad</span><span class="user-email">saliha.shahzad@cam…</span></div></div><div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></div></button></div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- Header -->
+    <header class="content-header">
+      <div class="header-left">
+        <a href="call-prep.html" class="back-to-list focus-ring">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M5 12l7 7M5 12l7-7"/></svg>
+          All calls
+        </a>
+        <div class="header-sep"></div>
+        <div class="call-meta" id="call-meta">
+          <!-- populated by JS -->
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn focus-ring" title="Raw data">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </button>
+        <button class="icon-btn focus-ring" title="Share">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Progress dots -->
+    <div class="progress-strip" id="progress-strip">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Chat area -->
+    <div class="chat-area" id="chat-area">
+      <!-- turns injected by JS -->
+    </div>
+
+    <!-- Input bar -->
+    <div class="input-area locked" id="input-area">
+      <div class="input-bar">
+        <input
+          id="chat-input"
+          class="input-field focus-ring"
+          type="text"
+          placeholder="Ask anything about this call…"
+          disabled
+        />
+        <span class="input-hint" id="input-hint">Briefing in progress</span>
+        <button class="input-send focus-ring" id="send-btn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   CALL DATA — keyed by ?call= param
+   (All 6 turns verbatim from the strategy document)
+════════════════════════════════════════════════════════════ */
+const CALLS = {
+  andy: {
+    name: 'Andy Harbut',
+    company: 'NewCo Risk',
+    role: 'Co-Founder',
+    type: 'Discovery',
+    badgeClass: 'badge-disco-sm',
+    time: 'Today · 3:00 PM',
+    turns: [
+      {
+        label: 'The Verdict',
+        text: `Andy Harbut, Co-Founder at NewCo Risk. Insurance and risk advisory for PE firms — 20 years in the space, over 1,000 deals. He is an operator, not a thought leader. He will not be moved by credentials. He will be moved by whether you understand his world. Medium priority call — he has authority but the firm is small. Ask me anything or I will keep going.`
+      },
+      {
+        label: 'The Company Read',
+        text: `NewCo Risk serves PE firms during acquisitions. Their job is identifying insurance and risk exposure before a deal closes. Their clients are PE partners under enormous time pressure — they want certainty, not creativity. Six employees, five million in revenue. This is a boutique. They are not buying a platform. They are buying something that makes their small team look bigger and smarter. Frame Tkxel as a force multiplier.`
+      },
+      {
+        label: 'The Relevance Bridge',
+        text: `Here is where we are genuinely relevant. We built a document processing pipeline for an insurance advisory firm that cut their due diligence report time from three days to four hours. That story lands for Andy — he lives in that problem. Lead with it as a question, not a case study: ask him what the bottleneck is that costs him the most time in a due diligence cycle. Let him describe the problem, then mirror it back with what we built.`
+      },
+      {
+        label: 'The Approach Strategy',
+        text: `Open without pitching. Andy has twenty years in this industry — he will lose respect for you the moment you start selling. Open with a genuine observation about his space. In the middle, let him talk — your job in the first half is to make him feel heard, not to demonstrate Tkxel. Avoid referencing company size. Close directly: ask for the next step, do not wait for him to offer it. He is an operator. He respects directness.`
+      },
+      {
+        label: 'Conversation Hooks',
+        text: `Andy left a President-level role at Symphony Risk Solutions to start NewCo. That is a meaningful choice worth acknowledging if it comes up naturally — not as a compliment, but as a real question: what made you decide to go independent? His background is in high-stakes, high-trust environments. Match his register. Be specific, be prepared, do not wing it. Precision will build more credibility with him than personality.`
+      },
+      {
+        label: 'Open Questions',
+        text: `Here is what I do not know and what you should try to find out on the call: what tools they currently use for risk analysis; whether they have worked with a technology partner before; who else will be in the room; and what triggered this conversation — did they come to us or did we reach out? That last one matters most. If they came to us, Andy already has a problem in mind. If we reached out, you need to surface the problem before you can solve it.`
+      }
+    ]
+  },
+  avantgarde: {
+    name: 'Sarah Chen',
+    company: 'Avant Garde Solutions Ltd',
+    role: 'VP of Operations',
+    type: 'PRE-DC',
+    badgeClass: 'badge-predc-sm',
+    time: 'Today · 9:00 PM',
+    turns: [
+      {
+        label: 'The Verdict',
+        text: `Sarah Chen, VP of Operations at Avant Garde Solutions Ltd. Mid-size logistics and operations consultancy — scaling fast, operationally stretched. She is pragmatic and detail-oriented. She will need to see a direct line from what we do to how her team operates better. Lead with outcomes, not capabilities. This is a strong fit call. Do not undersell it.`
+      },
+      {
+        label: 'The Company Read',
+        text: `Avant Garde serves enterprise clients across logistics, retail, and manufacturing. They are growing faster than their internal processes can handle — that tension is exactly where we play. Three hundred employees, revenue in the $40M range. Decision-making is distributed; Sarah has influence but she is not the only sign-off. Expect a second conversation with her CTO.`
+      },
+      {
+        label: 'The Relevance Bridge',
+        text: `We built a document processing pipeline for an insurance advisory firm that cut their due diligence report time from three days to four hours. Position this not as a technology project but as an operational capacity gain — Avant Garde's language is throughput and headcount efficiency, not infrastructure. Ask her what the highest-volume manual process in her team is. That is your entry point.`
+      },
+      {
+        label: 'The Approach Strategy',
+        text: `Open with the operational pressure framing — acknowledge that fast-growing operations teams are solving problems that did not exist six months ago. Let her confirm or redirect. Do not pitch until she has described her world. In the middle, bring in the proof point. Close by proposing a structured next step: a 30-minute technical scoping call with her and the CTO. Make it easy for her to say yes.`
+      },
+      {
+        label: 'Conversation Hooks',
+        text: `Sarah has been at Avant Garde for three years and moved from a senior analyst role to VP in eighteen months. That is an unusually fast track — she is driven and results-oriented. She will respect efficiency in the conversation itself. Do not over-explain. She is also active on LinkedIn around operational excellence — reference that framing if it comes up.`
+      },
+      {
+        label: 'Open Questions',
+        text: `I do not yet know: who the CTO is and how technical they are; what tools they are currently using for process management; whether they have a defined budget for this type of work; and whether this came from a top-down initiative or Sarah identified the need independently. That last point shapes how much internal selling she will need to do after this call.`
+      }
+    ]
+  },
+  amherst: {
+    name: 'Sidra Masood',
+    company: 'Amherst',
+    role: 'Director',
+    type: 'PRE-DC',
+    badgeClass: 'badge-predc-sm',
+    time: 'Tomorrow · 11:00 AM',
+    turns: [
+      {
+        label: 'The Verdict',
+        text: `Sidra Masood, Director at Amherst. Real estate investment and advisory firm — institutional clients, long decision cycles. She is analytical and process-driven. Credibility here comes from preparation and precision, not warmth. I have a gap: I do not yet know who else will be on this call. Answer this before you open or you risk pitching at the wrong level.`
+      },
+      {
+        label: 'The Company Read',
+        text: `Amherst operates across real estate investment, property technology, and advisory services. Roughly 400 employees. They are navigating a challenging market cycle — their clients are under pressure and that pressure flows down to the advisory layer. Technology investment here tends to be conservative and ROI-driven. The buying cycle will be long. This call is about qualification as much as anything else.`
+      },
+      {
+        label: 'The Relevance Bridge',
+        text: `Our most transferable proof point is the data aggregation and reporting work we did for a property advisory firm — reduced manual reporting time by 60% and gave their analysts 90 minutes a day back. Sidra's world runs on analysis and reporting. Ask her what the most time-consuming reporting process her team runs is. If she pauses, you have your entry point.`
+      },
+      {
+        label: 'The Approach Strategy',
+        text: `Open formally. Sidra will expect structure. Introduce the call with an agenda, even a simple one — it signals that you have prepared. In the middle, use precise questions rather than open-ended ones. She will be more comfortable with specifics. Avoid vague language like "solutions" and "partnerships." Close by summarising what you heard and proposing a concrete next step with a timeline.`
+      },
+      {
+        label: 'Conversation Hooks',
+        text: `Sidra has a finance background — she moved into real estate from investment banking. That means she thinks in terms of ROI, payback periods, and risk. Frame every capability in those terms if you can. She is measured and deliberate in how she speaks. Match that register. Do not rush the conversation.`
+      },
+      {
+        label: 'Open Questions',
+        text: `The critical gap: who else is attending this call. I need you to find that out in the first two minutes — ask Sidra directly. The other gaps: what prompted this conversation, what their current technology stack looks like, and whether they have an active budget or this is exploratory. The last point determines how hard to push on next steps.`
+      }
+    ]
+  }
+};
+
+/* ════════════════════════════════════════════════════════════
+   Q&A RESPONSES — keyword matching for free conversation
+════════════════════════════════════════════════════════════ */
+const QA = [
+  {
+    keywords: ['avoid','say','not say','should not','shouldnt'],
+    response: `The single thing not to say to Andy is anything that positions Tkxel as a vendor. He buys trust and expertise, not services. The moment you reference deliverables, timelines, or pricing unprompted, you have broken the frame. Keep the conversation in his world — his problems, his processes, his constraints — until he asks you to shift it.`
+  },
+  {
+    keywords: ['proof point','project','built','case study','reference','done'],
+    response: `The strongest proof point for this call is the document processing pipeline we built for an insurance advisory firm — three-day due diligence reports down to four hours. Andy will recognise that problem immediately. Use it as a question, not a story: "What is the part of your due diligence cycle that costs you the most time?" Let him describe it. Then mirror it back.`
+  },
+  {
+    keywords: ['competitor','competition','compet','alternative'],
+    response: `If Andy asks about competitors, do not deflect and do not trash them. Acknowledge the landscape briefly, then pivot: "The honest answer is that most tools in this space give you data. What we do is build the infrastructure that makes your team faster at using that data. That is a different thing." Then return to his problem. Do not linger on the competition question.`
+  },
+  {
+    keywords: ['question','discovery','ask','find out','open question'],
+    response: `The four questions to prioritise on this call: (1) What does your current due diligence process look like end-to-end? (2) Where does the most time get lost? (3) Have you worked with a technology partner on any part of this before? (4) What triggered this conversation — was this inbound or did we reach out? That last one tells you everything about where Andy is in the buying process.`
+  },
+  {
+    keywords: ['pitch','demo','present','show'],
+    response: `Do not pitch in this call. This is a discovery call. Your goal is to leave Andy feeling like you understand his world better than anyone he has spoken to recently. If you pitch, you lose. If he asks to see what we have built, show the relevant proof point briefly and return immediately to his problems. The product sells itself when the context is right.`
+  },
+  {
+    keywords: ['close','next step','end','wrap','follow up'],
+    response: `Close directly and specifically. Andy respects operators — he will expect you to be decisive. Do not ask "Is there anything else?" Ask: "Based on what we have talked about, the logical next step is a 45-minute technical scoping call with you and whoever owns your data infrastructure. I can send a calendar invite today — does Thursday or Friday work?" Give him a binary choice. Make it easy to say yes.`
+  },
+  {
+    keywords: ['time','how long','duration','how much time'],
+    response: `This call should run 45 minutes. Spend the first 20 in discovery — let Andy talk. Spend the middle 15 on the relevance bridge — connect what you heard to what we have built. Spend the final 10 proposing a next step and confirming it. If the conversation is going well and Andy is engaged, let it run over. Do not cut a good discovery call short.`
+  },
+  {
+    keywords: ['industry','sector','vertical','insurance','pe','private equity'],
+    response: `We have meaningful depth in financial services and insurance tech. The closest project is the due diligence pipeline for the insurance advisory firm. We also have work in risk data aggregation for a mid-market lending business. Both are worth referencing depending on where Andy takes the conversation. Do not front-load the industry knowledge — let him see that you understand the space through the questions you ask, not through what you claim.`
+  }
+];
+
+/* ════════════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════════════ */
+let currentTurn = 0;
+let briefingComplete = false;
+let callData = null;
+let isTyping = false;
+
+/* ════════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════════ */
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  const callId = params.get('call') || 'andy';
+  callData = CALLS[callId] || CALLS.andy;
+
+  renderHeader();
+  renderProgress();
+  setTimeout(() => deliverTurn(0), 700);
+}
+
+/* ════════════════════════════════════════════════════════════
+   HEADER
+════════════════════════════════════════════════════════════ */
+function renderHeader() {
+  const meta = document.getElementById('call-meta');
+  meta.innerHTML = `
+    <span class="call-name">${callData.name}</span>
+    <div class="dot-sep"></div>
+    <span class="call-sub">${callData.company} · ${callData.role}</span>
+    <div class="dot-sep"></div>
+    <span class="badge-sm ${callData.badgeClass}"><span class="badge-dot-sm"></span>${callData.type}</span>
+    <div class="dot-sep"></div>
+    <span class="call-sub">${callData.time}</span>
+  `;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PROGRESS STRIP
+════════════════════════════════════════════════════════════ */
+function renderProgress() {
+  const strip = document.getElementById('progress-strip');
+  strip.innerHTML = '';
+  callData.turns.forEach((turn, i) => {
+    // Connector
+    if (i > 0) {
+      const conn = document.createElement('div');
+      conn.className = 'progress-connector';
+      conn.id = `connector-${i}`;
+      strip.appendChild(conn);
+    }
+    // Item
+    const item = document.createElement('div');
+    item.className = 'progress-item';
+    item.onclick = () => { if (i < currentTurn) scrollToTurn(i); };
+    item.innerHTML = `
+      <div class="progress-dot" id="pdot-${i}">${i + 1}</div>
+      <span class="progress-label" id="plabel-${i}">${turn.label}</span>
+    `;
+    strip.appendChild(item);
+  });
+  updateProgress();
+}
+
+function updateProgress() {
+  callData.turns.forEach((_, i) => {
+    const dot   = document.getElementById(`pdot-${i}`);
+    const label = document.getElementById(`plabel-${i}`);
+    const conn  = document.getElementById(`connector-${i}`);
+    dot.className   = 'progress-dot' + (i < currentTurn ? ' done' : i === currentTurn ? ' current' : '');
+    label.className = 'progress-label' + (i < currentTurn ? ' done' : i === currentTurn ? ' current' : '');
+    if (conn) conn.className = 'progress-connector' + (i <= currentTurn ? ' done' : '');
+    // checkmark for done
+    if (i < currentTurn) {
+      dot.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else {
+      dot.textContent = i + 1;
+    }
+  });
+}
+
+function scrollToTurn(i) {
+  const el = document.getElementById(`turn-${i}`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ════════════════════════════════════════════════════════════
+   DELIVER TURN
+════════════════════════════════════════════════════════════ */
+function deliverTurn(index) {
+  if (isTyping || index >= callData.turns.length) return;
+  isTyping = true;
+
+  const turn = callData.turns[index];
+  const chat = document.getElementById('chat-area');
+
+  // Create turn wrapper
+  const wrapper = document.createElement('div');
+  wrapper.id = `turn-${index}`;
+  wrapper.className = 'agent-turn';
+  wrapper.innerHTML = `
+    <div class="turn-header">
+      <div class="agent-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      </div>
+      <div class="turn-meta">
+        <span class="turn-agent-name">Insphere Agent</span>
+        <span class="turn-label">Turn ${index + 1} — ${turn.label}</span>
+      </div>
+    </div>
+    <div class="bubble typing-cursor" id="bubble-${index}"></div>
+    <div class="turn-actions" id="actions-${index}"></div>
+  `;
+  chat.appendChild(wrapper);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    wrapper.classList.add('visible');
+    chat.scrollTop = chat.scrollHeight;
+  });
+
+  // Type text character by character
+  typeText(document.getElementById(`bubble-${index}`), turn.text, () => {
+    isTyping = false;
+    currentTurn = index + 1;
+    updateProgress();
+    showActions(index);
+  });
+}
+
+function typeText(el, text, onDone) {
+  el.textContent = '';
+  const words = text.split(' ');
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i < words.length) {
+      el.textContent += (i > 0 ? ' ' : '') + words[i];
+      i++;
+      document.getElementById('chat-area').scrollTop = document.getElementById('chat-area').scrollHeight;
+    } else {
+      clearInterval(interval);
+      el.classList.remove('typing-cursor');
+      if (onDone) onDone();
+    }
+  }, 28);
+}
+
+/* ════════════════════════════════════════════════════════════
+   ACTIONS AFTER EACH TURN
+════════════════════════════════════════════════════════════ */
+function showActions(index) {
+  const actionsEl = document.getElementById(`actions-${index}`);
+  const isLast = index === callData.turns.length - 1;
+
+  if (isLast) {
+    // Show completion state + unlock input
+    actionsEl.innerHTML = `
+      <div class="briefing-complete" id="briefing-complete">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><polyline points="20 6 9 17 4 12"/></svg>
+        <span class="briefing-complete-text">Briefing complete. Ask me anything about this call.</span>
+      </div>
+    `;
+    requestAnimationFrame(() => {
+      actionsEl.classList.add('visible');
+      document.getElementById('briefing-complete').classList.add('visible');
+    });
+    briefingComplete = true;
+    unlockInput();
+  } else {
+    actionsEl.innerHTML = `
+      <button class="btn-keep-going focus-ring" onclick="keepGoing(${index})">
+        Keep going
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+      <button class="btn-ask focus-ring" onclick="focusInput()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Ask a question
+      </button>
+    `;
+    requestAnimationFrame(() => actionsEl.classList.add('visible'));
+  }
+
+  document.getElementById('chat-area').scrollTop = document.getElementById('chat-area').scrollHeight;
+}
+
+function keepGoing(index) {
+  // Disable the actions for this turn
+  const actionsEl = document.getElementById(`actions-${index}`);
+  actionsEl.querySelectorAll('button').forEach(b => b.disabled = true);
+  actionsEl.style.opacity = '0.4';
+  // Deliver next
+  setTimeout(() => deliverTurn(index + 1), 300);
+}
+
+function focusInput() {
+  // Temporarily unlock input for a question mid-briefing
+  unlockInput(true);
+  document.getElementById('chat-input').focus();
+}
+
+/* ════════════════════════════════════════════════════════════
+   INPUT
+════════════════════════════════════════════════════════════ */
+function unlockInput(temporary = false) {
+  const area = document.getElementById('input-area');
+  const input = document.getElementById('chat-input');
+  const send  = document.getElementById('send-btn');
+  const hint  = document.getElementById('input-hint');
+  area.classList.remove('locked');
+  input.disabled = false;
+  send.disabled  = false;
+  if (temporary) {
+    hint.textContent = 'Ask a question — I will continue after';
+  } else {
+    hint.textContent = 'Briefing complete';
+    hint.style.display = 'none';
+  }
+  input.focus();
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  // Add user bubble
+  addUserBubble(text);
+
+  // Find response
+  setTimeout(() => {
+    const lc = text.toLowerCase();
+    let response = null;
+    for (const qa of QA) {
+      if (qa.keywords.some(k => lc.includes(k))) { response = qa.response; break; }
+    }
+    if (!response) {
+      response = `That is a good question. Based on what I know about ${callData.name} and ${callData.company}, the most important thing here is to stay in discovery mode. Let ${callData.name} describe the situation in their own terms before you draw conclusions. Is there something specific about the call you want me to help you think through?`;
+    }
+    addAgentReply(response);
+
+    // If mid-briefing, offer to continue
+    if (!briefingComplete) {
+      setTimeout(() => {
+        const chat = document.getElementById('chat-area');
+        const prompt = document.createElement('div');
+        prompt.className = 'turn-actions visible';
+        prompt.style.marginTop = 'var(--spacing-2)';
+        prompt.innerHTML = `
+          <button class="btn-keep-going focus-ring" onclick="this.closest('.turn-actions').remove(); deliverTurn(${currentTurn}); lockInput();">
+            Continue briefing
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+          <button class="btn-ask focus-ring" onclick="">Ask another</button>
+        `;
+        chat.appendChild(prompt);
+        chat.scrollTop = chat.scrollHeight;
+      }, 600);
+    }
+  }, 500);
+}
+
+function lockInput() {
+  if (briefingComplete) return;
+  const area  = document.getElementById('input-area');
+  const input = document.getElementById('chat-input');
+  const send  = document.getElementById('send-btn');
+  const hint  = document.getElementById('input-hint');
+  area.classList.add('locked');
+  input.disabled = true;
+  send.disabled  = true;
+  hint.textContent = 'Briefing in progress';
+  hint.style.display = '';
+}
+
+function addUserBubble(text) {
+  const chat = document.getElementById('chat-area');
+  const el = document.createElement('div');
+  el.className = 'user-turn';
+  el.innerHTML = `<div class="user-bubble">${escHtml(text)}</div>`;
+  chat.appendChild(el);
+  requestAnimationFrame(() => {
+    el.classList.add('visible');
+    chat.scrollTop = chat.scrollHeight;
+  });
+}
+
+function addAgentReply(text) {
+  const chat = document.getElementById('chat-area');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'agent-turn';
+  wrapper.innerHTML = `
+    <div class="turn-header">
+      <div class="agent-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      </div>
+      <div class="turn-meta">
+        <span class="turn-agent-name">Insphere Agent</span>
+        <span class="turn-label">Answer</span>
+      </div>
+    </div>
+    <div class="bubble typing-cursor" id="reply-bubble-${Date.now()}"></div>
+  `;
+  chat.appendChild(wrapper);
+  requestAnimationFrame(() => {
+    wrapper.classList.add('visible');
+    chat.scrollTop = chat.scrollHeight;
+  });
+  const bubble = wrapper.querySelector('.bubble');
+  typeText(bubble, text, null);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ════════════════════════════════════════════════════════════
+   EVENTS
+════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  document.getElementById('send-btn').addEventListener('click', sendMessage);
+  document.getElementById('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+});
+</script>
+</body>
+</html>
