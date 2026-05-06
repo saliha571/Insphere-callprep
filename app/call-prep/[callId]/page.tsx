@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 import type { Layout, Layouts } from "react-grid-layout";
 import { cn } from "@/lib/utils";
 import { CALLS, QA_BANK, type CallData } from "@/lib/call-data";
+import { getDoneCalls, markCallDone, unmarkCallDone } from "@/lib/done-calls";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -180,6 +181,7 @@ export default function CallPrepDetailPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [gridWidth, setGridWidth] = useState(0);
   const [activeDrawer, setActiveDrawer] = useState<string | null>(null);
+  const [isDone, setIsDone] = useState(false);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -241,6 +243,7 @@ export default function CallPrepDetailPage() {
     setAgentCards([]);
     hasMeasured.current = new Set();
     pendingHeights.current = {};
+    setIsDone(getDoneCalls().includes(callId));
   }, [callId]);
 
   const handleLayoutChange = useCallback((_: Layout[], all: Layouts) => {
@@ -389,6 +392,26 @@ export default function CallPrepDetailPage() {
             <span className="font-medium text-slate-700">{call.person}</span>
           </nav>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (isDone) {
+                  unmarkCallDone(callId);
+                  setIsDone(false);
+                } else {
+                  markCallDone(callId);
+                  setIsDone(true);
+                }
+              }}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12.5px] font-medium shadow-sm transition-all active:scale-95",
+                isDone
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              )}
+            >
+              <CheckCircle2 className={cn("h-3.5 w-3.5", isDone ? "text-emerald-500" : "text-slate-400")} />
+              {isDone ? "Done" : "Mark as done"}
+            </button>
             <button
               onClick={() => setShareOpen((v) => !v)}
               className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12.5px] font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95"

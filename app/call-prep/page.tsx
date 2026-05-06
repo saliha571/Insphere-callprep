@@ -1,13 +1,16 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   ArrowUpRight,
   BarChart2,
+  Briefcase,
   Building2,
   Calendar,
+  CheckCircle2,
   ChevronUp,
   Clock,
   Globe,
@@ -20,6 +23,7 @@ import {
 } from "lucide-react";
 import { CALLS } from "@/lib/call-data";
 import type { CallData, Readiness } from "@/lib/call-data";
+import { getDoneCalls } from "@/lib/done-calls";
 
 // ── Sidebar nav data ─────────────────────────────────────────────────────────
 const SIDEBAR_TOP = [
@@ -46,6 +50,16 @@ export default function CallPrepPage() {
     month: "long",
     day: "numeric",
   });
+
+  const [doneCalls, setDoneCalls] = React.useState<string[]>([]);
+  React.useEffect(() => {
+    setDoneCalls(getDoneCalls());
+    const onFocus = () => setDoneCalls(getDoneCalls());
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
+  const visibleCalls = CALLS.filter((c) => !doneCalls.includes(c.id));
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-white">
@@ -175,7 +189,7 @@ export default function CallPrepPage() {
         <div className="flex flex-shrink-0 items-center border-b border-slate-200/60 px-6 py-2.5">
           <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
             All calls for today &amp; tomorrow
-            <span className="ml-1.5 opacity-70">({CALLS.length})</span>
+            <span className="ml-1.5 opacity-70">({visibleCalls.length})</span>
           </span>
           <div className="ml-auto flex items-center gap-2">
             <button className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-white/70">
@@ -194,7 +208,13 @@ export default function CallPrepPage() {
         {/* Cards area — single horizontal scroll row */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           <div className="flex gap-3 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
-            {CALLS.map((c) => (
+            {visibleCalls.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-slate-400 w-full">
+                <CheckCircle2 className="h-8 w-8 text-emerald-400" />
+                <p className="text-[14px] font-medium text-slate-600">All caught up!</p>
+                <p className="text-[13px]">No pending calls — all marked as done.</p>
+              </div>
+            ) : visibleCalls.map((c) => (
               <PrepCard key={c.id} card={c} />
             ))}
           </div>
@@ -212,6 +232,12 @@ function urgencyLevel(remaining: string): "critical" | "moderate" | "low" {
   return parseInt(remaining.split("h")[0]) < 3 ? "moderate" : "low";
 }
 
+const URGENCY_CHIP: Record<"critical" | "moderate" | "low", { pill: string; dot: string }> = {
+  critical: { pill: "bg-red-50 border border-red-200 text-red-700",   dot: "bg-red-500 animate-pulse" },
+  moderate: { pill: "bg-red-50 border border-red-200 text-red-600",   dot: "bg-red-400" },
+  low:      { pill: "bg-blue-50 border border-blue-200 text-blue-700", dot: "bg-blue-500" },
+};
+
 const CALL_TYPE_LABEL: Record<string, string> = {
   disco: "DISCOVERY CALL",
   predc: "PRE-DC CALL",
@@ -226,15 +252,16 @@ const READINESS_BADGE: Record<Readiness, { pill: string; dot: string; label: str
 
 // ── Prep card ─────────────────────────────────────────────────────────────────
 function PrepCard({ card }: { card: CallData }) {
-  const badge = READINESS_BADGE[card.readiness];
+  const urgency = urgencyLevel(card.remaining);
+  const chip = URGENCY_CHIP[urgency];
 
   return (
     <article className="flex w-[340px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
 
       {/* ── Row 1: time chip ────────────────────────────────────────── */}
       <div className="px-4 pt-3.5 pb-0">
-        <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium", badge.pill)}>
-          <span className={cn("h-1.5 w-1.5 flex-shrink-0 rounded-full", badge.dot)} />
+        <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium", chip.pill)}>
+          <span className={cn("h-1.5 w-1.5 flex-shrink-0 rounded-full", chip.dot)} />
           {card.remaining} remaining
         </span>
       </div>
@@ -253,15 +280,27 @@ function PrepCard({ card }: { card: CallData }) {
       </p>
 
       {/* ── Row 4: metadata ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-4 px-4 pb-4 text-[12px] text-slate-600">
+      <div className="flex flex-wrap items-center gap-4 px-4 pb-4 text-[12px] text-slate-600">
         <span className="flex items-center gap-1.5">
           <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
           {card.companyDetails.employees} employees
         </span>
         <span className="flex items-center gap-1.5">
-          <Globe className="h-3.5 w-3.5 flex-shrink-0" />
+          <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
           {card.companyDetails.industry}
         </span>
+        {card.companyDetails.website && (
+          <a
+            href={card.companyDetails.website.startsWith("http") ? card.companyDetails.website : `https://${card.companyDetails.website}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1 text-[#2563eb] underline underline-offset-2 hover:text-blue-800"
+          >
+            <Globe className="h-3.5 w-3.5 flex-shrink-0" />
+            {card.companyDetails.website.replace(/^https?:\/\//, "")}
+          </a>
+        )}
       </div>
 
       <div className="mx-4 h-px bg-slate-100" />
