@@ -9,7 +9,8 @@ import React, {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import type { Layout, Layouts } from "react-grid-layout";
+import type { LayoutItem } from "react-grid-layout";
+type GridLayouts = { [breakpoint: string]: LayoutItem[] };
 import { cn } from "@/lib/utils";
 import { CALLS, QA_BANK, type CallData } from "@/lib/call-data";
 import { getDoneCalls, markCallDone, unmarkCallDone } from "@/lib/done-calls";
@@ -84,7 +85,7 @@ type BasePanelId = (typeof BASE_PANELS)[number];
 //   ROW_GROUPS[0] = ["stakeholders","opportunity","meeting"]
 //   ROW_GROUPS[1] = ["recap","news"]
 //   ROW_GROUPS[2] = ["work"]
-const DEFAULT_LAYOUTS: Layouts = {
+const DEFAULT_LAYOUTS: GridLayouts = {
   lg: [
     { i: "stakeholders", x: 0, y:  0, w: 1, h: 8,  minH: 4, minW: 1 },
     { i: "opportunity",  x: 1, y:  0, w: 2, h: 8,  minH: 4, minW: 1 },
@@ -124,7 +125,7 @@ function getLayoutKey(callId: string) {
   return `insphere-layout-v11-${callId}`;
 }
 
-function loadLayouts(callId: string): Layouts {
+function loadLayouts(callId: string): GridLayouts {
   if (typeof window === "undefined") return DEFAULT_LAYOUTS;
   try {
     const raw = localStorage.getItem(getLayoutKey(callId));
@@ -133,7 +134,7 @@ function loadLayouts(callId: string): Layouts {
   return DEFAULT_LAYOUTS;
 }
 
-function saveLayouts(callId: string, layouts: Layouts) {
+function saveLayouts(callId: string, layouts: GridLayouts) {
   try {
     localStorage.setItem(getLayoutKey(callId), JSON.stringify(layouts));
   } catch {}
@@ -170,7 +171,7 @@ export default function CallPrepDetailPage() {
   const callId = params.callId as string;
   const call = CALLS.find((c) => c.id === callId) ?? CALLS[0];
 
-  const [layouts, setLayouts] = useState<Layouts>(() => loadLayouts(callId));
+  const [layouts, setLayouts] = useState<GridLayouts>(() => loadLayouts(callId));
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [agentCards, setAgentCards] = useState<AgentCard[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -203,7 +204,7 @@ export default function CallPrepDetailPage() {
     const totalPx = contentPx + 47 + 24; // header + body padding
     const measuredH = Math.max(3, Math.ceil((totalPx + 16) / 50));
     // Never shrink below the DEFAULT_LAYOUTS h for this panel
-    const defaultH = DEFAULT_LAYOUTS.lg.find(item => item.i === id)?.h ?? 3;
+    const defaultH = DEFAULT_LAYOUTS.lg.find((item: LayoutItem) => item.i === id)?.h ?? 3;
     pendingHeights.current[id] = Math.max(measuredH, defaultH);
     if (heightBatchTimer.current) clearTimeout(heightBatchTimer.current);
     heightBatchTimer.current = setTimeout(() => {
@@ -216,8 +217,8 @@ export default function CallPrepDetailPage() {
         const maxH = Math.max(...measured.map((p) => normalised[p]));
         measured.forEach((p) => { normalised[p] = maxH; });
       });
-      setLayouts(prev => {
-        const lg = (prev.lg ?? DEFAULT_LAYOUTS.lg).map(item =>
+      setLayouts((prev: GridLayouts) => {
+        const lg = (prev.lg ?? DEFAULT_LAYOUTS.lg).map((item: LayoutItem) =>
           normalised[item.i] !== undefined ? { ...item, h: normalised[item.i] } : item
         );
         const updated = { ...prev, lg };
@@ -246,7 +247,7 @@ export default function CallPrepDetailPage() {
     setIsDone(getDoneCalls().includes(callId));
   }, [callId]);
 
-  const handleLayoutChange = useCallback((_: Layout[], all: Layouts) => {
+  const handleLayoutChange = useCallback((_: LayoutItem[], all: GridLayouts) => {
     setLayouts(all);
     saveLayouts(callId, all);
   }, [callId]);
@@ -345,11 +346,11 @@ export default function CallPrepDetailPage() {
 
     setAgentCards((prev) => [...prev, newCard]);
 
-    setLayouts((prev) => {
+    setLayouts((prev: GridLayouts) => {
       const updated = { ...prev };
       Object.keys(updated).forEach((bp) => {
-        const existing = updated[bp] ?? [];
-        const maxY = existing.reduce((m, l) => Math.max(m, l.y + l.h), 0);
+        const existing: LayoutItem[] = updated[bp] ?? [];
+        const maxY = existing.reduce((m: number, l: LayoutItem) => Math.max(m, l.y + l.h), 0);
         const fullW = bp === "lg" ? 4 : bp === "md" ? 2 : 1;
         updated[bp] = [...existing, { i: id, x: 0, y: maxY, w: fullW, h: 8, minH: 5, minW: 1 }];
       });
