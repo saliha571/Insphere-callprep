@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "Design token system with primitives, semantics and components — Tailwind CSS + shadcn/ui",
   "private": true,
-  "scripts": {
-    "build": "tsc --noEmit",
+  "scripts":     "build": "Next Build",
     "dev": "next dev",
     "start": "next start",
     "lint": "next lint"
