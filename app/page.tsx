@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  redirect("/ae-copilot");
+  redirect("/call-prep");
 }
