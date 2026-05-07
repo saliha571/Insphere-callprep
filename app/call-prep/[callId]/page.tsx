@@ -68,6 +68,7 @@ const ResponsiveGrid = dynamic<any>(
 const BASE_PANELS = [
   "stakeholders",
   "opportunity",
+  "meeting",
   "recap",
   "news",
   "work",
@@ -94,7 +95,8 @@ type BasePanelId = (typeof BASE_PANELS)[number];
 const DEFAULT_LAYOUTS: GridLayouts = {
   lg: [
     { i: "stakeholders", x: 0, y:  0, w: 1, h: 8,  minH: 4, minW: 1 },
-    { i: "opportunity",  x: 1, y:  0, w: 3, h: 8,  minH: 4, minW: 1 },
+    { i: "opportunity",  x: 1, y:  0, w: 2, h: 8,  minH: 4, minW: 1 },
+    { i: "meeting",      x: 3, y:  0, w: 1, h: 8,  minH: 4, minW: 1 },
     { i: "recap",        x: 0, y:  8, w: 2, h: 7,  minH: 3, minW: 1 },
     { i: "news",         x: 2, y:  8, w: 2, h: 7,  minH: 3, minW: 1 },
     { i: "tech",         x: 0, y: 15, w: 2, h: 10, minH: 6, minW: 1 },
@@ -103,24 +105,26 @@ const DEFAULT_LAYOUTS: GridLayouts = {
   md: [
     { i: "stakeholders", x: 0, y:  0, w: 1, h: 8 },
     { i: "opportunity",  x: 1, y:  0, w: 1, h: 8 },
-    { i: "recap",        x: 0, y:  8, w: 1, h: 7 },
-    { i: "news",         x: 1, y:  8, w: 1, h: 7 },
-    { i: "tech",         x: 0, y: 15, w: 1, h: 10 },
-    { i: "work",         x: 1, y: 15, w: 1, h: 10 },
+    { i: "meeting",      x: 0, y:  8, w: 1, h: 7 },
+    { i: "recap",        x: 1, y:  8, w: 1, h: 7 },
+    { i: "news",         x: 0, y: 15, w: 2, h: 7 },
+    { i: "tech",         x: 0, y: 22, w: 1, h: 10 },
+    { i: "work",         x: 1, y: 22, w: 1, h: 10 },
   ],
   sm: [
     { i: "stakeholders", x: 0, y:  0, w: 1, h: 8 },
     { i: "opportunity",  x: 0, y:  8, w: 1, h: 8 },
-    { i: "recap",        x: 0, y: 16, w: 1, h: 7 },
-    { i: "news",         x: 0, y: 23, w: 1, h: 7 },
-    { i: "tech",         x: 0, y: 30, w: 1, h: 10 },
-    { i: "work",         x: 0, y: 40, w: 1, h: 10 },
+    { i: "meeting",      x: 0, y: 16, w: 1, h: 7 },
+    { i: "recap",        x: 0, y: 23, w: 1, h: 7 },
+    { i: "news",         x: 0, y: 30, w: 1, h: 7 },
+    { i: "tech",         x: 0, y: 37, w: 1, h: 10 },
+    { i: "work",         x: 0, y: 47, w: 1, h: 10 },
   ],
 };
 
 // Panels that share the same grid row — auto-height normalises to max(h) in row
 const ROW_GROUPS: string[][] = [
-  ["stakeholders", "opportunity"],
+  ["stakeholders", "opportunity", "meeting"],
   ["recap", "news"],
   ["tech", "work"],
 ];
@@ -128,7 +132,7 @@ const ROW_GROUPS: string[][] = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getLayoutKey(callId: string) {
   // v5 — bumped: 4-col grid, 1:2:1 / 2:2 layout matching reference
-  return `insphere-layout-v12-${callId}`;
+  return `insphere-layout-v13-${callId}`;
 }
 
 function loadLayouts(callId: string): GridLayouts {
@@ -682,13 +686,14 @@ function Sidebar() {
 const PANEL_CONFIG: Record<string, { icon: React.ElementType; title: string; iconBg: string }> = {
   stakeholders: { icon: Users,          title: "Stakeholders",           iconBg: "bg-violet-500"  },
   opportunity:  { icon: BarChart2,      title: "Opportunity Analysis",   iconBg: "bg-rose-500"    },
+  meeting:      { icon: Flag,           title: "Strategy",               iconBg: "bg-blue-500"    },
   recap:        { icon: MessageCircle,  title: "Conversation Recap",     iconBg: "bg-emerald-500" },
   news:         { icon: Newspaper,      title: "Conversation Openers",   iconBg: "bg-sky-500"     },
   work:         { icon: BookOpen,       title: "Related Work",           iconBg: "bg-teal-500"    },
   tech:         { icon: Cpu,            title: "Tech Intelligence",      iconBg: "bg-indigo-500"  },
 };
 
-const EXPANDABLE_PANELS = new Set(["stakeholders", "opportunity", "recap", "work", "news"]);
+const EXPANDABLE_PANELS = new Set(["stakeholders", "opportunity", "meeting", "recap", "work", "news"]);
 
 function PanelCard({
   id, collapsed, onToggle, call, onNaturalHeight, onExpand,
@@ -1078,25 +1083,21 @@ function OpportunityPanel({ call }: { call: CallData }) {
 
 // ── Meeting notes panel ───────────────────────────────────────────────────────
 function MeetingNotesPanel({ call }: { call: CallData }) {
+  const approachTurn = call.turns.find((t) => /approach/i.test(t.label));
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <p className="mb-2 text-[12px] font-semibold text-slate-800">Meeting Goals</p>
-        <ul className="flex flex-col gap-1.5">
-          {call.meetingNotes.goals.map((g, i) => (
-            <li key={i} className="flex items-start gap-2 text-[13px] text-slate-700">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
-              {g}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {approachTurn && (
+        <div>
+          <p className="mb-2 text-[12px] font-semibold text-slate-800">Approach</p>
+          <p className="text-[13px] leading-relaxed text-slate-700">{approachTurn.text}</p>
+        </div>
+      )}
       <div>
         <p className="mb-2 text-[12px] font-semibold text-slate-800">Discussion Topics</p>
         <ul className="flex flex-col gap-1.5">
           {call.meetingNotes.discussionTopics.map((t, i) => (
             <li key={i} className="flex items-start gap-2 text-[13px] text-slate-700">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
+              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-300" />
               {t}
             </li>
           ))}
@@ -1421,6 +1422,7 @@ function PreparedModal({ call, notifyStep, setNotifyStep, onClose }: {
 const DRAWER_CONFIG: Record<string, { icon: React.ElementType; title: string; accent: string }> = {
   stakeholders: { icon: Users,         title: "Stakeholder Briefing", accent: "text-violet-500"  },
   opportunity:  { icon: BarChart2,     title: "Opportunity Analysis", accent: "text-rose-500"    },
+  meeting:      { icon: Flag,          title: "Strategy",             accent: "text-blue-500"    },
   recap:        { icon: MessageCircle, title: "Conversation Recap",   accent: "text-emerald-500" },
   work:         { icon: BookOpen,      title: "Related Work",         accent: "text-teal-500"    },
   news:         { icon: Newspaper,     title: "Conversation Openers", accent: "text-amber-500"   },
