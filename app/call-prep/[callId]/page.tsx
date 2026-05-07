@@ -1019,6 +1019,16 @@ function OpportunityPanel({ call }: { call: CallData }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Client need highlight */}
+      <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
+        <div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-blue-100">
+          <Flag className="h-3.5 w-3.5 text-blue-600" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-blue-500">Client need</p>
+          <p className="text-[13px] leading-relaxed text-slate-700">{oa.recap}</p>
+        </div>
+      </div>
       <div className="overflow-hidden rounded-xl border border-slate-100">
         {[
           { label: "Current Roadblock", value: oa.roadblock },
