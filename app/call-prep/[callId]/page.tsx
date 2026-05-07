@@ -512,7 +512,6 @@ export default function CallPrepDetailPage() {
         </div>
 
         {/* ── Quick access strip ── */}
-        <QuickAccessStrip call={call} onOpenDrawer={setActiveDrawer} />
 
         {/* ── Bento grid ── */}
         <div ref={gridRef} className="flex-1 overflow-y-auto px-2 pb-28 pt-2 sm:px-4 sm:pb-24 sm:pt-3 md:px-5 print:overflow-visible">
