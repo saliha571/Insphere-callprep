@@ -37,6 +37,8 @@ export interface CallData {
   role: string;
   type: CallType;
   readiness: Readiness;
+  /** Call quality/priority rating out of 5 */
+  rating: number;
   verdict: string;
   snapshot: string;
   /** Full prose description shown in the detail page hero */
@@ -162,6 +164,7 @@ export const CALLS: CallData[] = [
     role: "Co-Founder",
     type: "disco",
     readiness: "complete",
+    rating: 4,
     verdict:
       "Not buying a platform — buying a force multiplier. Lead with outcomes. He will be moved by whether you understand his world, not by credentials.",
     snapshot: "Insurance & risk advisory · PE firms · 6 employees · $5M revenue",
@@ -472,6 +475,7 @@ export const CALLS: CallData[] = [
     role: "VP of Operations",
     type: "predc",
     readiness: "in-progress",
+    rating: 5,
     verdict:
       "Strong fit — do not undersell it. She needs a direct line from what we do to how her team operates better. Lead with outcomes, not capabilities.",
     snapshot: "Logistics & operations consultancy · 300 employees · $40M revenue",
@@ -771,6 +775,7 @@ export const CALLS: CallData[] = [
     role: "Director",
     type: "predc",
     readiness: "gap-flagged",
+    rating: 3,
     verdict:
       "Gap: unknown who else is on this call. Resolve before opening or you risk pitching at the wrong level. Conservative buyer — credibility comes from precision, not warmth.",
     snapshot: "Real estate investment & advisory · 400 employees · long buying cycles",
@@ -1042,6 +1047,7 @@ export const CALLS: CallData[] = [
     role: "Head of Digital Design",
     type: "predc",
     readiness: "complete",
+    rating: 4,
     verdict:
       "Executive approval is the final gate. Address remaining concerns, reinforce ROI, and come prepared with upsell options to maximise deal value.",
     snapshot: "VR retail & design · 42 employees · $1.8M TCV",
