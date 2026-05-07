@@ -439,7 +439,7 @@ export default function CallPrepDetailPage() {
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-[18px] font-bold leading-tight tracking-tight text-slate-900 sm:text-[20px]">
-                Prep for {call.company}
+                {call.company}
               </h1>
               <span className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-500 shadow-sm">
                 <Clock className="h-3 w-3 text-amber-500" />
@@ -655,7 +655,7 @@ const PANEL_CONFIG: Record<string, { icon: React.ElementType; title: string; ico
   opportunity:  { icon: BarChart2,      title: "Opportunity Analysis", iconBg: "bg-rose-500"    },
   meeting:      { icon: Flag,           title: "Meeting Notes",        iconBg: "bg-blue-500"    },
   recap:        { icon: MessageCircle,   title: "Conversation Recap",   iconBg: "bg-emerald-500" },
-  news:         { icon: Newspaper,      title: "Related News",         iconBg: "bg-sky-500"     },
+  news:         { icon: Newspaper,      title: "Conversation Openers", iconBg: "bg-sky-500"     },
   work:         { icon: BookOpen,       title: "Related Work",         iconBg: "bg-teal-500"    },
 };
 
@@ -1060,7 +1060,7 @@ const DRAWER_CONFIG: Record<string, { icon: React.ElementType; title: string; ac
   meeting:      { icon: Flag,          title: "Meeting Notes",        accent: "text-blue-500"    },
   recap:        { icon: MessageCircle, title: "Conversation Recap",   accent: "text-emerald-500" },
   work:         { icon: BookOpen,      title: "Related Work",         accent: "text-teal-500"    },
-  news:         { icon: Newspaper,     title: "Related News",         accent: "text-amber-500"   },
+  news:         { icon: Newspaper,     title: "Conversation Openers", accent: "text-amber-500"   },
 };
 
 // ── Shared drawer primitives ──────────────────────────────────────────────────
