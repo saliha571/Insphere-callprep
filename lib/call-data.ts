@@ -8,12 +8,31 @@ export interface Stakeholder {
   initials: string;
   color: string;
   linkedin?: string;
+  confirmed?: boolean;
+  isDecisionMaker?: boolean;
+  decisionMakerReason?: string;
   // Drawer-only fields
   technicalLevel?: "Technical" | "Semi Technical" | "Non Technical";
   summary?: string;
   education?: { degree: string; institution: string; year?: string }[];
   previousCompanies?: { name: string; role: string; duration?: string }[];
   keyInsights?: string[];
+}
+
+export interface InternalMatch {
+  name: string;
+  role: string;
+  initials: string;
+  color: string;
+  location: string;
+  relevance: string;
+  pastContext?: string;
+}
+
+export interface TechVendor {
+  name: string;
+  category: string;
+  signal: string;
 }
 
 export interface RelatedWorkItem {
@@ -76,6 +95,8 @@ export interface CallData {
     unlockQuestion: string;
     dealRisk: string;
     whatToAvoid: string[];
+    useCases?: string[];
+    serviceMapping?: { service: string; relevance: string }[];
   };
   meetingNotes: {
     // Panel card fields (unchanged)
@@ -114,6 +135,14 @@ export interface CallData {
   };
   relatedWork: RelatedWorkItem[];
   turns: AgentTurn[];
+  internalMatch?: InternalMatch;
+  tkxelAttendees?: { name: string; role: string; initials: string; color: string }[];
+  techIntelligence?: {
+    vendors: TechVendor[];
+    hiringSignals: string[];
+    synthesis: string;
+  };
+  isPrepared?: boolean;
 }
 
 // ── Q&A Bank ─────────────────────────────────────────────────────────────────
@@ -191,6 +220,9 @@ export const CALLS: CallData[] = [
         initials: "AH",
         color: "bg-blue-600",
         linkedin: "#",
+        confirmed: true,
+        isDecisionMaker: true,
+        decisionMakerReason: "Budget holder and final decision-maker; co-founder with full authority over technology investment",
         technicalLevel: "Non Technical",
         summary: "Andy Harbut co-founded NewCo Risk after 20 years at Symphony Risk Solutions, where he led the firm's PE advisory practice. He built NewCo to run a boutique focused on depth over scale — six analysts, all sector-specialist. His background is entirely commercial and domain-driven; he evaluates technology through the lens of client outcomes, not architectural elegance. He responds well to expertise and directness, poorly to pitches.",
         education: [
@@ -214,6 +246,8 @@ export const CALLS: CallData[] = [
         role: "Head of Operations",
         initials: "RT",
         color: "bg-violet-500",
+        confirmed: true,
+        isDecisionMaker: false,
         technicalLevel: "Semi Technical",
         summary: "Rachel Torres oversees day-to-day operations at NewCo Risk, including workflow management, analyst resourcing, and vendor coordination. She is the person most directly affected by the doc review bottleneck — her team absorbs the manual overhead on every mandate. She has exposure to operational tooling and understands automation in principle, though her background is not engineering.",
         education: [
@@ -234,6 +268,8 @@ export const CALLS: CallData[] = [
         role: "Senior Risk Analyst",
         initials: "JO",
         color: "bg-teal-500",
+        confirmed: false,
+        isDecisionMaker: false,
         technicalLevel: "Non Technical",
         summary: "James Okafor is a senior member of the NewCo risk team with deep domain expertise in insurance exposure for PE acquisitions. He is unlikely to be a decision-maker in this conversation but will be an end-user of any automation deployed. His buy-in matters for adoption — solutions that change his workflow without improving his output will face resistance.",
         education: [
@@ -276,6 +312,18 @@ export const CALLS: CallData[] = [
         "Do not reference company size — Andy does not think of NewCo Risk as small; it is depth-focused, not undersized",
         "Do not over-reference his LinkedIn activity — quoting his posts reads as surveillance, not preparation",
         "Do not pitch before he has described the problem in his own words — the credibility you build in the first half is what earns you the right to present",
+      ],
+      useCases: [
+        "Automated document extraction from insurance policy and exposure schedules",
+        "PE due diligence report generation from source documents",
+        "Risk exposure flagging and anomaly detection across portfolios",
+        "Client-ready summary generation from raw analyst notes",
+        "Mandate intake and classification workflow automation",
+      ],
+      serviceMapping: [
+        { service: "AI & Data", relevance: "Core offering — building the document intelligence pipeline that removes manual extraction from their workflow" },
+        { service: "Engineering", relevance: "Custom integration with their existing SharePoint/DocuSign document environment" },
+        { service: "Advisory", relevance: "Strategic framing of the automation roadmap so Andy can present it to PE clients as a capability, not a vendor dependency" },
       ],
     },
     meetingNotes: {
@@ -467,6 +515,31 @@ export const CALLS: CallData[] = [
         text: "What tools they currently use; whether they have worked with a technology partner before; who else will be in the room; and what triggered this conversation. That last one matters most — if they came to us, Andy already has a problem in mind.",
       },
     ],
+    internalMatch: {
+      name: "Ali Hassan",
+      role: "VP, Financial Services Delivery",
+      initials: "AH",
+      color: "bg-blue-700",
+      location: "Lahore, Pakistan",
+      relevance: "Delivered an insurance document intelligence platform for a Lloyd's broker in 2023 — directly analogous to what NewCo Risk needs. Ali understands PE due diligence workflows and has shipped automation at exactly the boutique scale Andy operates at.",
+      pastContext: "No prior relationship with Andy — this is a cold introduction. Recommend Hassan positions Ali as the technical lead on the scoping call.",
+    },
+    tkxelAttendees: [
+      { name: "Hassan Malik", role: "Account Executive", initials: "HM", color: "bg-[#1e2a6e]" },
+    ],
+    techIntelligence: {
+      vendors: [
+        { name: "DocuSign", category: "Contract Management", signal: "Familiar with structured document workflows — receptive to automation that works within existing signing flows" },
+        { name: "SharePoint", category: "Document Storage", signal: "On-premise file management mindset; likely storing PDFs and Word docs manually — no document intelligence layer in place" },
+        { name: "Excel", category: "Analysis & Reporting", signal: "All analysis is spreadsheet-driven; high manual overhead, zero automation — this is the core pain point" },
+      ],
+      hiringSignals: [
+        "Risk Analyst role open on LinkedIn — headcount growing, workflow burden increasing",
+        "No engineering or data hires visible — confirms there is no internal technical capability",
+        "Operations role posted 6 months ago — Rachel's team is already stretched",
+      ],
+      synthesis: "NewCo Risk is a manual-first operation with no automation layer and no internal tech capability — they are entirely dependent on external partners for anything beyond spreadsheets. This is an early-stage buyer: the pain is live, the budget is not yet allocated, and the right framing will shape how they think about the solution space.",
+    },
   },
   {
     id: "avantgarde",
@@ -502,6 +575,9 @@ export const CALLS: CallData[] = [
         initials: "SC",
         color: "bg-rose-500",
         linkedin: "#",
+        confirmed: true,
+        isDecisionMaker: false,
+        decisionMakerReason: "Budget influence but not final authority — Marcus Webb holds technical sign-off",
         technicalLevel: "Semi Technical",
         summary: "Sarah Chen joined Avant Garde three years ago to lead operational transformation across their retail and logistics verticals. She was brought in specifically because of her track record turning high-volume manual processes into structured automation pipelines. She is the originator of this initiative — she identified the bottleneck, scoped the problem, and initiated vendor conversations. She has budget influence but not final authority.",
         education: [
@@ -524,6 +600,9 @@ export const CALLS: CallData[] = [
         role: "CTO",
         initials: "MW",
         color: "bg-indigo-600",
+        confirmed: true,
+        isDecisionMaker: true,
+        decisionMakerReason: "Technical sign-off required from CTO before any external integration can proceed",
         technicalLevel: "Technical",
         summary: "Marcus Webb is the technical authority at Avant Garde, and his sign-off is required for any external integration. He is a pragmatic engineer — sceptical of over-engineered solutions and allergic to vendor lock-in. He joined Avant Garde from a SaaS infrastructure background, which means he will probe on architecture, security posture, and data handling. He is unlikely to be hostile, but he will need to be satisfied technically before he will co-sign with Sarah.",
         education: [
@@ -544,6 +623,8 @@ export const CALLS: CallData[] = [
         role: "Director of Process Excellence",
         initials: "PN",
         color: "bg-amber-500",
+        confirmed: false,
+        isDecisionMaker: false,
         technicalLevel: "Semi Technical",
         summary: "Priya Nair oversees process standards across Avant Garde's operational teams. She is an internal auditor of change — her role is to ensure that any automation introduced does not create new failure points or compliance gaps. She is not an obstacle; she is a safeguard. If she is satisfied, the implementation path is smoother. If she is not included, she can slow things down post-sale.",
         education: [
@@ -587,6 +668,18 @@ export const CALLS: CallData[] = [
         "Do not over-promise ROI figures without qualifying their specific shipment volume and process structure",
         "Do not let the conversation become a Marcus-led architecture review — you are here to qualify the operational case first",
         "Do not treat 'keen to move fast' as a commitment — ask what 'fast' means to her before assuming urgency",
+      ],
+      useCases: [
+        "Shipment exception detection and routing automation",
+        "Fulfilment status update generation from WMS data",
+        "Multi-location inventory reconciliation workflow",
+        "Carrier document extraction and classification",
+        "SLA breach prediction and alert pipeline",
+      ],
+      serviceMapping: [
+        { service: "AI & Data", relevance: "Fulfilment anomaly detection and shipment classification pipeline — addresses Sarah's highest-volume manual process directly" },
+        { service: "Engineering", relevance: "API integration layer between their hybrid WMS and any automation tooling — critical for Marcus's sign-off" },
+        { service: "Cloud & Infrastructure", relevance: "Scalable data pipeline that grows with their 3-centre fulfilment volume without rearchitecting their existing stack" },
       ],
     },
     meetingNotes: {
@@ -767,6 +860,31 @@ export const CALLS: CallData[] = [
         text: "Who the CTO is and how technical they are; what tools they currently use; whether they have a budget; and whether this came top-down or Sarah identified the need independently.",
       },
     ],
+    internalMatch: {
+      name: "Yusuf Khatri",
+      role: "Lead Engineer, Automation Practice",
+      initials: "YK",
+      color: "bg-rose-600",
+      location: "Islamabad, Pakistan",
+      relevance: "Yusuf built Tkxel's fulfilment automation framework used in the logistics case study Sarah already read. He can speak Marcus's language on APIs and integration architecture — and he can do it in 30 minutes.",
+      pastContext: "No prior relationship with Avant Garde. Recommend positioning Yusuf as the technical co-lead on the scoping call alongside Hassan.",
+    },
+    tkxelAttendees: [
+      { name: "Hassan Malik", role: "Account Executive", initials: "HM", color: "bg-[#1e2a6e]" },
+    ],
+    techIntelligence: {
+      vendors: [
+        { name: "Hybrid WMS", category: "Warehouse Management", signal: "Non-standard setup — partial WMS plus spreadsheets suggests the team outgrew their original system and hasn't fully replaced it" },
+        { name: "Excel / Google Sheets", category: "Process Tracking", signal: "Manual tracking of shipments and orders — high error surface, no version control, no audit trail" },
+        { name: "Salesforce (likely)", category: "CRM", signal: "Enterprise-scale org with a CTO from a SaaS background — very likely on Salesforce or similar; Marcus will want clean API integration" },
+      ],
+      hiringSignals: [
+        "3 operations analyst roles open — headcount is the current response to volume growth",
+        "Senior Backend Engineer posted 2 weeks ago — Marcus is building internal capability, watch for build vs. buy preference",
+        "No automation or AI roles posted — confirms no internal automation roadmap yet",
+      ],
+      synthesis: "Avant Garde is in the classic pre-automation inflection: growing fast, patching gaps with headcount, CTO building internally but no dedicated automation programme. The stack is hybrid and messy — which means the integration surface is real but manageable. Marcus will be the blocker or the accelerator depending on how the technical conversation goes.",
+    },
   },
   {
     id: "amherst",
@@ -802,6 +920,9 @@ export const CALLS: CallData[] = [
         initials: "SM",
         color: "bg-emerald-600",
         linkedin: "#",
+        confirmed: true,
+        isDecisionMaker: false,
+        decisionMakerReason: "Sidra can advance internally but final authority likely sits with a senior commercial or technical stakeholder — unknown at this stage",
         technicalLevel: "Non Technical",
         summary: "Sidra Masood is a Director at Amherst with cross-functional responsibility over portfolio operations and reporting infrastructure. Her response to a cold LinkedIn outreach — naming portfolio reporting as a specific pain unprompted — signals that she is genuinely exploring solutions, not just taking exploratory calls. At a firm with Amherst's institutional culture, that level of responsiveness is notable. She is not a technical buyer; she is an outcomes buyer.",
         education: [
@@ -824,6 +945,8 @@ export const CALLS: CallData[] = [
         role: "Attendee — TBC",
         initials: "?",
         color: "bg-slate-300",
+        confirmed: true,
+        isDecisionMaker: false,
         technicalLevel: "Non Technical",
         summary: "A second attendee is confirmed on the invite but their identity is not yet known. Given Amherst's structure, this is likely either a member of Sidra's team or a senior stakeholder she has looped in to evaluate fit. Either way, prepare for the possibility that this person has more authority than expected and calibrate accordingly.",
         keyInsights: [
@@ -859,6 +982,18 @@ export const CALLS: CallData[] = [
         "Do not use technology-forward language like 'AI-powered' or 'intelligent automation' — Amherst evaluates ROI and operational outcomes, not innovation",
         "Do not try to close anything on this call — the win is a structured follow-up with the right stakeholder, not an agreement",
         "Do not stay high-level if she goes specific — match her level of precision at every point in the conversation or you lose credibility",
+      ],
+      useCases: [
+        "Automated portfolio reporting from multi-source property data",
+        "Asset performance summary generation for advisor and LP presentations",
+        "Rent roll data extraction and normalisation across acquisition targets",
+        "Investment committee deck automation from deal pipeline data",
+        "Compliance and regulatory reporting workflow for multi-family portfolios",
+      ],
+      serviceMapping: [
+        { service: "AI & Data", relevance: "Core of the portfolio reporting use case — intelligent data aggregation from disparate asset sources into structured, presentation-ready output" },
+        { service: "Advisory", relevance: "Amherst's conservative institutional culture requires a framing conversation before any tool selection — Advisory positions Tkxel as a strategic partner, not a vendor" },
+        { service: "Solution Implementation", relevance: "For a firm at this scale, a phased implementation approach with defined milestones will be essential for procurement approval" },
       ],
     },
     meetingNotes: {
@@ -1038,6 +1173,31 @@ export const CALLS: CallData[] = [
         text: "Critical gap: who else is attending. Ask directly in the first two minutes. Also: what prompted this conversation, current technology stack, and whether there is an active budget.",
       },
     ],
+    internalMatch: {
+      name: "Nadia Rahman",
+      role: "Delivery Lead, Data & Reporting",
+      initials: "NR",
+      color: "bg-emerald-700",
+      location: "Lahore, Pakistan",
+      relevance: "Led the property advisory reporting automation that cut analyst prep time by 60% — the exact proof point most relevant to Sidra's stated problem. Nadia has worked with two institutional real estate clients and understands conservative procurement cycles.",
+      pastContext: "No prior relationship with Amherst. Recommend a structured introduction: one-page credentials summary and a reference available on request before the follow-up call.",
+    },
+    tkxelAttendees: [
+      { name: "Sarib Imtiaz", role: "Business Development", initials: "SI", color: "bg-emerald-600" },
+    ],
+    techIntelligence: {
+      vendors: [
+        { name: "MRI Software", category: "Property Management", signal: "Industry-standard platform for multi-family portfolios — data lives here; reporting is usually manual on top of it" },
+        { name: "Yardi", category: "Real Estate ERP", signal: "Possible alternative or co-deployment with MRI; reporting is a known pain point for both platforms at scale" },
+        { name: "Excel / PowerBI", category: "Reporting", signal: "Very likely their current reporting layer — highly manual, high maintenance, low adaptability as portfolio grows" },
+      ],
+      hiringSignals: [
+        "Portfolio Analyst role open — new headcount suggests reporting workload is increasing",
+        "No data engineering or automation roles posted — no internal technical capacity for this build",
+        "Technology Director role filled 4 months ago — new tech leadership may be receptive to modernisation conversations",
+      ],
+      synthesis: "Amherst's stack is typical of a conservative real estate firm: strong property management platforms but no data intelligence or reporting automation layer. The pain Sidra named — slow and manual portfolio reporting — is structurally embedded. There is no quick fix without external support, which is what makes this a clean opportunity if the sales motion matches their institutional pace.",
+    },
   },
   // ── Acme ──────────────────────────────────────────────────────────────────
   {
@@ -1074,6 +1234,9 @@ export const CALLS: CallData[] = [
         initials: "ML",
         color: "bg-rose-500",
         linkedin: "#",
+        confirmed: true,
+        isDecisionMaker: false,
+        decisionMakerReason: "Internal champion driving the initiative — but exec approval requires Colleen Elaine as the final decision-maker",
         technicalLevel: "Semi Technical",
         summary: "Mark Lecroce leads digital design strategy at Acme, and is the internal champion driving the VR retail initiative. He has been managing the exec approval process carefully and has positioned this project as a design differentiation play rather than a technology investment. He is enthusiastic but cautious — he does not want to over-promise to his leadership before the deal is signed.",
         education: [
@@ -1095,6 +1258,9 @@ export const CALLS: CallData[] = [
         initials: "CE",
         color: "bg-violet-500",
         linkedin: "#",
+        confirmed: false,
+        isDecisionMaker: true,
+        decisionMakerReason: "Final decision-maker on technology investment at Acme — exec sign-off required before any deployment proceeds",
         technicalLevel: "Non Technical",
         summary: "Colleen Elaine is the executive sponsor at Acme and the final decision-maker on this initiative. She is unlikely to attend the current call but is the target of Mark's internal advocacy. She evaluates technology investment through brand impact and revenue lift, not implementation complexity. Her primary concern will be whether this pilot can scale globally across Acme's retail footprint without becoming a liability.",
         education: [
@@ -1116,6 +1282,8 @@ export const CALLS: CallData[] = [
         initials: "LA",
         color: "bg-blue-500",
         linkedin: "#",
+        confirmed: true,
+        isDecisionMaker: false,
         technicalLevel: "Technical",
         summary: "Leslie Alexander oversees Acme's product and platform layer, including integrations with third-party partners. She will be involved in any technical scoping post-approval and will evaluate the integration model, support SLAs, and content update workflow. She is rigorous and detail-oriented — if she is on the call, expect specific questions about the integration timeline and ongoing content management.",
         education: [
@@ -1136,6 +1304,8 @@ export const CALLS: CallData[] = [
         role: "VR Integration Lead",
         initials: "KY",
         color: "bg-teal-500",
+        confirmed: true,
+        isDecisionMaker: false,
         technicalLevel: "Technical",
         summary: "Ky is the VR Integration Lead from Vesta Labs — Insphere's partner on this deployment. He will be responsible for the technical implementation of the VR retail experience and is attending the call to provide technical reassurance to the Acme team. He is a subject-matter expert, not a commercial stakeholder. Do not let the conversation shift to a deep technical discussion in this call — reserve that for a dedicated scoping session.",
         education: [
@@ -1179,6 +1349,18 @@ export const CALLS: CallData[] = [
         "Do not go deep on implementation detail in this call — that belongs in a dedicated scoping session with Leslie post-approval",
         "Do not present the proposal as a feature list — the exec audience thinks in revenue impact and brand differentiation, not functionality",
         "Do not undersell urgency — the pilot slot deadline is real, and Tim needs to feel the cost of delay without it sounding manufactured",
+      ],
+      useCases: [
+        "Immersive in-store VR product demonstration and try-on experiences",
+        "Design studio workflow automation for virtual concept prototyping",
+        "Multilingual VR content delivery for global retail footprint",
+        "Customer engagement analytics dashboard for VR dwell time and interaction data",
+        "Virtual store design and layout simulation before physical build-out",
+      ],
+      serviceMapping: [
+        { service: "Solution Implementation", relevance: "Full VR retail deployment with integration into existing store systems and Vesta Labs partnership — this is the core engagement" },
+        { service: "AI & Data", relevance: "Customer engagement analytics layer that gives the exec team the measurable ROI story they need to justify the spend" },
+        { service: "Optimization", relevance: "Post-pilot performance tuning — dwell time improvement, conversion attribution, and content refresh cycles" },
       ],
     },
     meetingNotes: {
@@ -1352,5 +1534,31 @@ export const CALLS: CallData[] = [
         text: "What specific concerns does the executive team have? Who is the final decision maker? Is there a deadline driving the approval timeline? What would make this an easy yes for their board?",
       },
     ],
+    internalMatch: {
+      name: "Faisal Siddiqui",
+      role: "VR & Immersive Experience Lead",
+      initials: "FS",
+      color: "bg-violet-700",
+      location: "Karachi, Pakistan",
+      relevance: "Faisal has deployed 4 VR retail integrations — including a multilingual product in Southeast Asia — and co-authored the exec ROI model Tim now needs. He can turn this call into a technical handoff and give Tim everything he needs to present internally.",
+      pastContext: "Faisal was involved in scoping the Acme proposal with the Vesta Labs team — he knows the project history and the pricing model.",
+    },
+    tkxelAttendees: [
+      { name: "Hassan Malik", role: "Account Executive", initials: "HM", color: "bg-[#1e2a6e]" },
+      { name: "Ky (Vesta Labs)", role: "VR Integration Lead", initials: "KY", color: "bg-teal-500" },
+    ],
+    techIntelligence: {
+      vendors: [
+        { name: "Vesta Labs VR Platform", category: "VR / Immersive Tech", signal: "Existing partner on this engagement — already integrated into the proposal and familiar with Acme's requirements" },
+        { name: "Salesforce Commerce Cloud", category: "E-commerce", signal: "Likely backend for Acme's retail channels — VR integration will need a clean API connection to product catalogue and inventory data" },
+        { name: "Adobe Experience Manager", category: "Content Management", signal: "Probable content platform — VR content updates will need to flow through their existing CMS workflow or Leslie will raise a maintenance objection" },
+      ],
+      hiringSignals: [
+        "UX Designer for Immersive Experiences posted — Acme is building internal design capability, which reduces long-term vendor dependency risk",
+        "Head of Product, Digital acquired through HoloTech — new internal VR capability that could shift exec preference toward in-house build",
+        "No integration or deployment roles posted — no capacity to execute internally at this stage",
+      ],
+      synthesis: "Acme is technically ready to deploy — their existing stack is compatible and Vesta Labs removes the implementation risk. The only blocker is executive approval, and the exec team's concern is almost certainly ROI and build-vs-buy, not technical feasibility. Give Tim the numbers and the one-pager and this closes.",
+    },
   },
 ];

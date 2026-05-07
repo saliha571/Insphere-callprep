@@ -259,11 +259,14 @@ function PrepCard({ card }: { card: CallData }) {
   return (
     <article className="flex w-[340px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
 
-      {/* ── Row 1: time chip ────────────────────────────────────────── */}
-      <div className="px-4 pt-3.5 pb-0">
+      {/* ── Row 1: time chip + call type ───────────────────────────── */}
+      <div className="flex items-center gap-2 px-4 pt-3.5 pb-0">
         <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium", chip.pill)}>
           <span className={cn("h-1.5 w-1.5 flex-shrink-0 rounded-full", chip.dot)} />
           {card.remaining} remaining
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          {CALL_TYPE_LABEL[card.type] ?? card.type}
         </span>
       </div>
 
@@ -274,7 +277,7 @@ function PrepCard({ card }: { card: CallData }) {
             {card.person}, {card.company}
           </p>
           <span className="flex-shrink-0 text-[11.5px] font-medium text-slate-500">
-            Call rating: <span className="font-semibold text-slate-700">{card.rating}/5</span>
+            Call rating: <span className="font-semibold text-slate-700">{card.rating * 2}/10</span>
           </span>
         </div>
         <p className="mt-0.5 text-[12.5px] text-slate-500">{card.role}</p>

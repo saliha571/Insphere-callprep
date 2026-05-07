@@ -13,6 +13,7 @@ import type { LayoutItem } from "react-grid-layout";
 type GridLayouts = { [breakpoint: string]: LayoutItem[] };
 import { cn } from "@/lib/utils";
 import { CALLS, QA_BANK, type CallData } from "@/lib/call-data";
+import type { InternalMatch } from "@/lib/call-data";
 import { getDoneCalls, markCallDone, unmarkCallDone } from "@/lib/done-calls";
 import {
   AlertTriangle,
@@ -22,10 +23,12 @@ import {
   BookOpen,
   Briefcase,
   Building2,
+  Calendar,
   CheckCircle2,
   ChevronDown,
   Clock,
   Copy,
+  Cpu,
   Download,
   Flag,
   GraduationCap,
@@ -35,16 +38,19 @@ import {
   Lightbulb,
   Linkedin,
   Mail,
+  MapPin,
   Maximize2,
   MessageCircle,
   MessageSquare,
   Monitor,
   Newspaper,
+  Phone,
   PlusCircle,
   Search,
   Send,
   Share2,
   Sparkles,
+  Star,
   TrendingUp,
   UserPlus,
   Users,
@@ -66,6 +72,7 @@ const BASE_PANELS = [
   "recap",
   "news",
   "work",
+  "tech",
 ] as const;
 
 type BasePanelId = (typeof BASE_PANELS)[number];
@@ -92,7 +99,8 @@ const DEFAULT_LAYOUTS: GridLayouts = {
     { i: "meeting",      x: 3, y:  0, w: 1, h: 8,  minH: 4, minW: 1 },
     { i: "recap",        x: 0, y:  8, w: 2, h: 7,  minH: 3, minW: 1 },
     { i: "news",         x: 2, y:  8, w: 2, h: 7,  minH: 3, minW: 1 },
-    { i: "work",         x: 0, y: 15, w: 4, h: 10, minH: 6, minW: 2 },
+    { i: "tech",         x: 0, y: 15, w: 2, h: 10, minH: 6, minW: 1 },
+    { i: "work",         x: 2, y: 15, w: 2, h: 10, minH: 6, minW: 1 },
   ],
   md: [
     { i: "stakeholders", x: 0, y:  0, w: 1, h: 8 },
@@ -100,7 +108,8 @@ const DEFAULT_LAYOUTS: GridLayouts = {
     { i: "meeting",      x: 0, y:  8, w: 1, h: 7 },
     { i: "recap",        x: 1, y:  8, w: 1, h: 7 },
     { i: "news",         x: 0, y: 15, w: 2, h: 7 },
-    { i: "work",         x: 0, y: 22, w: 2, h: 10 },
+    { i: "tech",         x: 0, y: 22, w: 1, h: 10 },
+    { i: "work",         x: 1, y: 22, w: 1, h: 10 },
   ],
   sm: [
     { i: "stakeholders", x: 0, y:  0, w: 1, h: 8 },
@@ -108,7 +117,8 @@ const DEFAULT_LAYOUTS: GridLayouts = {
     { i: "meeting",      x: 0, y: 16, w: 1, h: 7 },
     { i: "recap",        x: 0, y: 23, w: 1, h: 7 },
     { i: "news",         x: 0, y: 30, w: 1, h: 7 },
-    { i: "work",         x: 0, y: 37, w: 1, h: 10 },
+    { i: "tech",         x: 0, y: 37, w: 1, h: 10 },
+    { i: "work",         x: 0, y: 47, w: 1, h: 10 },
   ],
 };
 
@@ -116,7 +126,7 @@ const DEFAULT_LAYOUTS: GridLayouts = {
 const ROW_GROUPS: string[][] = [
   ["stakeholders", "opportunity", "meeting"],
   ["recap", "news"],
-  ["work"],
+  ["tech", "work"],
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -183,6 +193,8 @@ export default function CallPrepDetailPage() {
   const [gridWidth, setGridWidth] = useState(0);
   const [activeDrawer, setActiveDrawer] = useState<string | null>(null);
   const [isDone, setIsDone] = useState(false);
+  const [preparedModalOpen, setPreparedModalOpen] = useState(false);
+  const [notifyStep, setNotifyStep] = useState(-1);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -395,6 +407,16 @@ export default function CallPrepDetailPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
+                setPreparedModalOpen(true);
+                setNotifyStep(0);
+              }}
+              className="flex items-center gap-1.5 rounded-lg border border-[#1e2a6e]/20 bg-[#1e2a6e]/5 px-3 py-1.5 text-[12.5px] font-medium text-[#1e2a6e] shadow-sm transition-all hover:bg-[#1e2a6e]/10 active:scale-95"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Mark as prepared
+            </button>
+            <button
+              onClick={() => {
                 if (isDone) {
                   unmarkCallDone(callId);
                   setIsDone(false);
@@ -488,6 +510,9 @@ export default function CallPrepDetailPage() {
           </div>
 
         </div>
+
+        {/* ── Quick access strip ── */}
+        <QuickAccessStrip call={call} onOpenDrawer={setActiveDrawer} />
 
         {/* ── Bento grid ── */}
         <div ref={gridRef} className="flex-1 overflow-y-auto px-2 pb-28 pt-2 sm:px-4 sm:pb-24 sm:pt-3 md:px-5 print:overflow-visible">
@@ -587,6 +612,15 @@ export default function CallPrepDetailPage() {
         />
       )}
 
+      {preparedModalOpen && (
+        <PreparedModal
+          call={call}
+          notifyStep={notifyStep}
+          setNotifyStep={setNotifyStep}
+          onClose={() => { setPreparedModalOpen(false); setNotifyStep(-1); }}
+        />
+      )}
+
       {toast && <Toast message={toast} />}
     </div>
   );
@@ -651,12 +685,13 @@ function Sidebar() {
 
 // ── Panel config ──────────────────────────────────────────────────────────────
 const PANEL_CONFIG: Record<string, { icon: React.ElementType; title: string; iconBg: string }> = {
-  stakeholders: { icon: Users,          title: "Stakeholders",         iconBg: "bg-violet-500"  },
-  opportunity:  { icon: BarChart2,      title: "Opportunity Analysis", iconBg: "bg-rose-500"    },
-  meeting:      { icon: Flag,           title: "Meeting Notes",        iconBg: "bg-blue-500"    },
-  recap:        { icon: MessageCircle,   title: "Conversation Recap",   iconBg: "bg-emerald-500" },
-  news:         { icon: Newspaper,      title: "Conversation Openers", iconBg: "bg-sky-500"     },
-  work:         { icon: BookOpen,       title: "Related Work",         iconBg: "bg-teal-500"    },
+  stakeholders: { icon: Users,          title: "Stakeholders",           iconBg: "bg-violet-500"  },
+  opportunity:  { icon: BarChart2,      title: "Opportunity Analysis",   iconBg: "bg-rose-500"    },
+  meeting:      { icon: Flag,           title: "Meeting Notes",          iconBg: "bg-blue-500"    },
+  recap:        { icon: MessageCircle,  title: "Conversation Recap",     iconBg: "bg-emerald-500" },
+  news:         { icon: Newspaper,      title: "Conversation Openers",   iconBg: "bg-sky-500"     },
+  work:         { icon: BookOpen,       title: "Related Work",           iconBg: "bg-teal-500"    },
+  tech:         { icon: Cpu,            title: "Tech Intelligence",      iconBg: "bg-indigo-500"  },
 };
 
 const EXPANDABLE_PANELS = new Set(["stakeholders", "opportunity", "meeting", "recap", "work", "news"]);
@@ -739,6 +774,7 @@ function PanelContent({ id, call }: { id: string; call: CallData }) {
     case "recap":        return <ConversationRecapPanel call={call} />;
     case "news":         return <RelatedNewsPanel call={call} />;
     case "work":         return <RelatedWorkPanel call={call} />;
+    case "tech":         return <TechIntelligencePanel call={call} />;
     default:             return null;
   }
 }
@@ -783,55 +819,188 @@ function SlackIcon({ className }: { className?: string }) {
   );
 }
 
+// ── Quick access strip ────────────────────────────────────────────────────────
+function QuickAccessStrip({ call, onOpenDrawer }: { call: CallData; onOpenDrawer: (id: string) => void }) {
+  const lastEmail = call.conversationRecap.recent[call.conversationRecap.recent.length - 1];
+  const approachTurn = call.turns.find((t) => /approach/i.test(t.label));
+  const approachSnippet = approachTurn ? approachTurn.text.split(/[.!?]/)[0] + "." : null;
+  const emailColor = lastEmail ? avatarColor(lastEmail.person) : "bg-slate-400";
+  const emailInitial = lastEmail ? lastEmail.person.trim()[0]?.toUpperCase() : "?";
+
+  return (
+    <div className="mx-4 mb-3 flex-shrink-0 overflow-hidden rounded-2xl bg-white shadow-[0px_-2px_15px_0px_rgba(0,0,0,0.04)] ring-1 ring-slate-200/60 sm:mx-6 print:hidden">
+      <div className="grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        {/* Column 1 — latest email */}
+        <button
+          onClick={() => onOpenDrawer("recap")}
+          className="flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+        >
+          <div className={cn("flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white", emailColor)}>
+            {emailInitial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <GmailIcon className="h-[11px] w-[11px] flex-shrink-0" />
+              <p className="text-[11px] font-medium text-slate-400">Latest email</p>
+              {lastEmail && <span className="ml-auto text-[10.5px] text-slate-300">{lastEmail.timestamp}</span>}
+            </div>
+            <p className="mt-0.5 truncate text-[12.5px] font-semibold text-slate-800">
+              {lastEmail ? lastEmail.person.split(" ")[0] : "—"} — {lastEmail?.note.split("\n\n")[0].split("\n")[0].slice(0, 60)}
+            </p>
+          </div>
+        </button>
+
+        {/* Column 2 — meeting goal */}
+        <div className="flex items-start gap-3 px-4 py-3">
+          <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50">
+            <Flag className="h-3.5 w-3.5 text-blue-500" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-medium text-slate-400">Call goal</p>
+            <p className="mt-0.5 text-[12.5px] font-semibold leading-snug text-slate-800">
+              {call.meetingNotes.callGoalOneSentence}
+            </p>
+          </div>
+        </div>
+
+        {/* Column 3 — suggested approach */}
+        <div className="flex items-start gap-3 px-4 py-3">
+          <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[#1e2a6e]/5">
+            <Sparkles className="h-3.5 w-3.5 text-[#1e2a6e]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-medium text-slate-400">Suggested approach</p>
+            <p className="mt-0.5 text-[12.5px] font-semibold leading-snug text-slate-800">
+              {approachSnippet ?? "Open without pitching. Lead with questions."}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Stakeholders panel ────────────────────────────────────────────────────────
 function StakeholdersPanel({ call }: { call: CallData }) {
-  const filtered = call.stakeholders;
+  const onCall = call.stakeholders.filter((s) => s.confirmed);
+  const decisionMakers = call.stakeholders.filter((s) => s.isDecisionMaker);
+  const tkxel = call.tkxelAttendees ?? [];
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col divide-y divide-slate-50">
-        {filtered.map((s) => {
-          // DiceBear "avataaars" — illustrated AI-generated portraits
-          const avatarSrc = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(s.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
-          return (
-            <div key={s.name} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
-              {/* AI-illustrated avatar */}
-              <div className={cn("relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-full", s.color)}>
-                <img
-                  src={avatarSrc}
-                  alt={s.name}
-                  className="h-9 w-9 object-cover"
-                />
-              </div>
+    <div className="flex flex-col gap-4">
+      {/* Section 1 — On this call */}
+      {onCall.length > 0 && (
+        <div>
+          <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">On this call</p>
+          <div className="flex flex-col divide-y divide-slate-50">
+            {onCall.map((s) => {
+              const avatarSrc = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(s.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+              return (
+                <div key={s.name} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
+                  <div className={cn("relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-full", s.color)}>
+                    <img src={avatarSrc} alt={s.name} className="h-9 w-9 object-cover" />
+                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[12.5px] font-semibold leading-tight text-slate-900">{s.name}</p>
+                      {s.isDecisionMaker && (
+                        <span title={s.decisionMakerReason ?? "Decision maker"}>
+                          <Star className="h-3 w-3 text-amber-400" fill="currentColor" />
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-[11px] text-slate-400">{s.role}</p>
+                  </div>
+                  <span className="flex-shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                    On call
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-              <div className="min-w-0 flex-1">
-                <p className="text-[12.5px] font-semibold leading-tight text-slate-900">{s.name}</p>
-                <p className="truncate text-[11px] text-slate-400">{s.role}</p>
-              </div>
-
-              {/* Action buttons — grouped tight */}
-              <div className="flex items-center gap-1">
-                <a
-                  href={s.linkedin ?? "#"}
-                  onClick={(e) => { if (!s.linkedin || s.linkedin === "#") e.preventDefault(); }}
-                  className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-[#0a66c2]/8 text-[#0a66c2] transition-colors hover:bg-[#0a66c2]/15"
-                  title="LinkedIn"
-                >
-                  <LinkedInIcon className="h-3.5 w-3.5" />
-                </a>
-                <button
-                  className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-slate-100 transition-colors hover:bg-slate-200"
-                  title="Open in Slack"
-                >
-                  <SlackIcon className="h-3.5 w-3.5" />
-                </button>
-              </div>
+      {/* Section 2 — Decision makers */}
+      {decisionMakers.length > 0 && (
+        <>
+          <div className="h-px bg-slate-100" />
+          <div>
+            <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">Decision makers</p>
+            <div className="flex flex-col gap-2">
+              {decisionMakers.map((s) => (
+                <div key={s.name} className="flex items-start gap-2.5">
+                  <div className={cn("mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white", s.color)}>
+                    {s.initials}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[12.5px] font-semibold text-slate-900">{s.name}</p>
+                    {s.decisionMakerReason && (
+                      <p className="mt-0.5 text-[11px] italic leading-snug text-slate-400">{s.decisionMakerReason}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          );
-        })}
-        {filtered.length === 0 && (
-          <p className="py-3 text-center text-[12px] text-slate-400">No results</p>
-        )}
-      </div>
+          </div>
+        </>
+      )}
+
+      {/* Section 3 — Tkxel on this call */}
+      {tkxel.length > 0 && (
+        <>
+          <div className="h-px bg-slate-100" />
+          <div>
+            <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">Tkxel on this call</p>
+            <div className="flex flex-col gap-2">
+              {tkxel.map((a) => (
+                <div key={a.name} className="flex items-center gap-2.5">
+                  <div className={cn("flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white", a.color)}>
+                    {a.initials}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[12.5px] font-semibold text-slate-900">{a.name}</p>
+                    <p className="text-[11px] text-slate-400">{a.role}</p>
+                  </div>
+                  <span className="flex-shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                    Internal
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Fallback — no data */}
+      {onCall.length === 0 && decisionMakers.length === 0 && (
+        <div className="flex flex-col divide-y divide-slate-50">
+          {call.stakeholders.map((s) => {
+            const avatarSrc = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(s.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+            return (
+              <div key={s.name} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
+                <div className={cn("relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-full", s.color)}>
+                  <img src={avatarSrc} alt={s.name} className="h-9 w-9 object-cover" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12.5px] font-semibold leading-tight text-slate-900">{s.name}</p>
+                  <p className="truncate text-[11px] text-slate-400">{s.role}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <a href={s.linkedin ?? "#"} onClick={(e) => { if (!s.linkedin || s.linkedin === "#") e.preventDefault(); }} className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-[#0a66c2]/8 text-[#0a66c2] transition-colors hover:bg-[#0a66c2]/15">
+                    <LinkedInIcon className="h-3.5 w-3.5" />
+                  </a>
+                  <button className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-slate-100 transition-colors hover:bg-slate-200">
+                    <SlackIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
         <button className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2 text-[12px] font-medium text-slate-600 transition-colors hover:bg-slate-50">
           <UserPlus className="h-3.5 w-3.5" />
@@ -848,18 +1017,18 @@ function StakeholdersPanel({ call }: { call: CallData }) {
 
 // ── Opportunity analysis panel ────────────────────────────────────────────────
 function OpportunityPanel({ call }: { call: CallData }) {
+  const oa = call.opportunityAnalysis;
   return (
     <div className="flex flex-col gap-4">
       <div>
         <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Recap</p>
-        <p className="text-[13px] leading-relaxed text-slate-700">{call.opportunityAnalysis.recap}</p>
+        <p className="text-[13px] leading-relaxed text-slate-700">{oa.recap}</p>
       </div>
-      <p className="text-[13px] font-semibold text-slate-800">{call.opportunityAnalysis.nextMilestone.split("→")[0]?.trim()}</p>
       <div className="overflow-hidden rounded-xl border border-slate-100">
         {[
-          { label: "Current Roadblock",    value: call.opportunityAnalysis.roadblock      },
-          { label: "Next Milestone",        value: call.opportunityAnalysis.nextMilestone  },
-          { label: "Up-sell Opportunities", value: call.opportunityAnalysis.upsell         },
+          { label: "Current Roadblock",    value: oa.roadblock      },
+          { label: "Next Milestone",        value: oa.nextMilestone  },
+          { label: "Up-sell Opportunities", value: oa.upsell         },
         ].map((row, i) => (
           <div key={row.label} className={cn("grid grid-cols-[140px_1fr] items-start gap-3 px-4 py-3", i > 0 && "border-t border-slate-100")}>
             <span className="text-[12px] font-semibold text-slate-500">{row.label}</span>
@@ -867,6 +1036,31 @@ function OpportunityPanel({ call }: { call: CallData }) {
           </div>
         ))}
       </div>
+
+      {oa.useCases && oa.useCases.length > 0 && (
+        <div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Relevant use cases</p>
+          <div className="flex flex-wrap gap-1.5">
+            {oa.useCases.map((uc, i) => (
+              <span key={i} className="rounded-full bg-slate-100 px-3 py-1 text-[11.5px] text-slate-700">{uc}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {oa.serviceMapping && oa.serviceMapping.length > 0 && (
+        <div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Tkxel services mapped</p>
+          <div className="grid grid-cols-2 gap-2">
+            {oa.serviceMapping.map((sm, i) => (
+              <div key={i} className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5">
+                <p className="mb-1 text-[11.5px] font-semibold text-slate-800">{sm.service}</p>
+                <p className="text-[11px] leading-snug text-slate-500">{sm.relevance}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1013,43 +1207,202 @@ function RelatedNewsPanel({ call }: { call: CallData }) {
   );
 }
 
+// ── Internal match card ───────────────────────────────────────────────────────
+function InternalMatchCard({ match }: { match: InternalMatch }) {
+  return (
+    <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/40 px-4 py-4">
+      <div className="mb-3 flex items-center gap-3">
+        <div className={cn("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white", match.color)}>
+          {match.initials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13.5px] font-bold text-slate-900">{match.name}</p>
+          <p className="text-[11.5px] text-slate-500">{match.role}</p>
+        </div>
+        <span className="flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-[10.5px] font-semibold text-violet-700">
+          <MapPin className="h-3 w-3" />
+          {match.location}
+        </span>
+      </div>
+      <p className="mb-2 text-[12.5px] leading-relaxed text-slate-700">{match.relevance}</p>
+      {match.pastContext && (
+        <p className="mb-3 text-[11.5px] italic text-slate-400">{match.pastContext}</p>
+      )}
+      <div className="flex gap-2">
+        <button className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-violet-200 bg-white py-1.5 text-[11.5px] font-medium text-violet-700 transition-colors hover:bg-violet-50">
+          <Phone className="h-3 w-3" />
+          Schedule intro
+        </button>
+        <button className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-violet-200 bg-white py-1.5 text-[11.5px] font-medium text-violet-700 transition-colors hover:bg-violet-50">
+          <Mail className="h-3 w-3" />
+          Intro email
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Related work panel ────────────────────────────────────────────────────────
 function RelatedWorkPanel({ call }: { call: CallData }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {call.relatedWork.map((w, i) => (
-        <div
-          key={i}
-          className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3.5"
-        >
-          {/* Title */}
-          <p className="text-[12.5px] font-semibold text-slate-800">{w.label}</p>
-
-          {/* Problem / Solution */}
-          {w.problem && (
-            <div className="flex flex-col gap-1">
-              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Problem</span>
-              <p className="text-[12px] leading-relaxed text-slate-500">{w.problem}</p>
-            </div>
-          )}
-          {w.solution && (
-            <div className="flex flex-col gap-1">
-              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">How we solved it</span>
-              <p className="text-[12px] leading-relaxed text-slate-600">{w.solution}</p>
-            </div>
-          )}
-
-          {/* CTA */}
-          <a
-            href={w.href}
-            className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[11.5px] font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-blue-50 hover:text-blue-700 hover:ring-blue-200"
+    <div className="flex flex-col gap-0">
+      {call.internalMatch && <InternalMatchCard match={call.internalMatch} />}
+      <div className="grid grid-cols-2 gap-3">
+        {call.relatedWork.map((w, i) => (
+          <div
+            key={i}
+            className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3.5"
           >
-            View case study
-            <ArrowUpRight className="h-3 w-3" />
-          </a>
-        </div>
-      ))}
+            <p className="text-[12.5px] font-semibold text-slate-800">{w.label}</p>
+            {w.problem && (
+              <div className="flex flex-col gap-1">
+                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Problem</span>
+                <p className="text-[12px] leading-relaxed text-slate-500">{w.problem}</p>
+              </div>
+            )}
+            {w.solution && (
+              <div className="flex flex-col gap-1">
+                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">How we solved it</span>
+                <p className="text-[12px] leading-relaxed text-slate-600">{w.solution}</p>
+              </div>
+            )}
+            <a
+              href={w.href}
+              className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[11.5px] font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-blue-50 hover:text-blue-700 hover:ring-blue-200"
+            >
+              View case study
+              <ArrowUpRight className="h-3 w-3" />
+            </a>
+          </div>
+        ))}
+      </div>
     </div>
+  );
+}
+
+// ── Tech Intelligence panel ───────────────────────────────────────────────────
+function TechIntelligencePanel({ call }: { call: CallData }) {
+  const ti = call.techIntelligence;
+  if (!ti) {
+    return <p className="text-[13px] text-slate-400 italic">No tech intelligence data available for this call.</p>;
+  }
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Vendors table */}
+      <div>
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Detected vendors</p>
+        <div className="overflow-hidden rounded-xl border border-slate-100">
+          {ti.vendors.map((v, i) => (
+            <div key={i} className={cn("px-4 py-3", i > 0 && "border-t border-slate-100")}>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-[12.5px] font-semibold text-slate-900">{v.name}</p>
+                <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600">{v.category}</span>
+              </div>
+              <p className="text-[11.5px] leading-snug text-slate-500">{v.signal}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Hiring signals */}
+      <div>
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Hiring signals</p>
+        <ul className="flex flex-col gap-2">
+          {ti.hiringSignals.map((signal, i) => (
+            <li key={i} className="flex items-start gap-2 text-[12.5px] leading-snug text-slate-700">
+              <TrendingUp className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-indigo-400" />
+              {signal}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* AI synthesis */}
+      <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3">
+        <div className="mb-1.5 flex items-center gap-1.5">
+          <Sparkles className="h-3 w-3 text-indigo-500" />
+          <p className="text-[10.5px] font-semibold text-indigo-600">AI read</p>
+        </div>
+        <p className="text-[12.5px] leading-relaxed text-slate-700">{ti.synthesis}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Prepared modal ────────────────────────────────────────────────────────────
+const NOTIFY_CHAIN = [
+  { role: "AE",         name: "Hassan Malik"   },
+  { role: "Director",   name: "Sarah Chen"     },
+  { role: "VP of Sales",name: "James Liu"      },
+  { role: "CEO",        name: "Nadia Kowalski" },
+];
+
+function PreparedModal({ call, notifyStep, setNotifyStep, onClose }: {
+  call: CallData;
+  notifyStep: number;
+  setNotifyStep: (n: number) => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    if (notifyStep < NOTIFY_CHAIN.length - 1) {
+      const t = setTimeout(() => setNotifyStep(notifyStep + 1), 800);
+      return () => clearTimeout(t);
+    }
+  }, [notifyStep, setNotifyStep]);
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+        <div className="pointer-events-auto w-full max-w-sm mx-4 rounded-2xl bg-white p-8 shadow-2xl">
+          {/* Header */}
+          <div className="mb-6 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+            </div>
+            <div>
+              <p className="text-[15px] font-bold text-slate-900">Prep marked as ready</p>
+              <p className="text-[12px] text-slate-400">{call.company} · {call.person}</p>
+            </div>
+          </div>
+
+          {/* Chain */}
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Notification chain</p>
+          <div className="flex flex-col gap-3">
+            {NOTIFY_CHAIN.map((node, i) => {
+              const isDone = i <= notifyStep;
+              const isActive = i === notifyStep;
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <div className={cn(
+                    "h-2.5 w-2.5 flex-shrink-0 rounded-full transition-colors duration-500",
+                    isDone ? "bg-emerald-400" : "bg-slate-200",
+                    isActive && "animate-pulse bg-amber-400",
+                  )} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold text-slate-900">{node.name}</p>
+                    <p className="text-[11px] text-slate-400">{node.role}</p>
+                  </div>
+                  <span className={cn(
+                    "rounded-full px-2 py-0.5 text-[10.5px] font-semibold",
+                    isDone && !isActive ? "bg-emerald-50 text-emerald-700" : isActive ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-400",
+                  )}>
+                    {isDone && !isActive ? "Sent" : isActive ? "Sending…" : "Queued"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={onClose}
+            className="mt-7 w-full rounded-xl bg-slate-900 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-slate-800"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 
