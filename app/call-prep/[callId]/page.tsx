@@ -407,22 +407,14 @@ export default function CallPrepDetailPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                setPreparedModalOpen(true);
-                setNotifyStep(0);
-              }}
-              className="flex items-center gap-1.5 rounded-lg border border-[#1e2a6e]/20 bg-[#1e2a6e]/5 px-3 py-1.5 text-[12.5px] font-medium text-[#1e2a6e] shadow-sm transition-all hover:bg-[#1e2a6e]/10 active:scale-95"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Mark as prepared
-            </button>
-            <button
-              onClick={() => {
                 if (isDone) {
                   unmarkCallDone(callId);
                   setIsDone(false);
                 } else {
                   markCallDone(callId);
                   setIsDone(true);
+                  setPreparedModalOpen(true);
+                  setNotifyStep(0);
                 }
               }}
               className={cn(
