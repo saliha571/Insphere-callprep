@@ -68,7 +68,6 @@ const ResponsiveGrid = dynamic<any>(
 const BASE_PANELS = [
   "stakeholders",
   "opportunity",
-  "meeting",
   "recap",
   "news",
   "work",
@@ -95,8 +94,7 @@ type BasePanelId = (typeof BASE_PANELS)[number];
 const DEFAULT_LAYOUTS: GridLayouts = {
   lg: [
     { i: "stakeholders", x: 0, y:  0, w: 1, h: 8,  minH: 4, minW: 1 },
-    { i: "opportunity",  x: 1, y:  0, w: 2, h: 8,  minH: 4, minW: 1 },
-    { i: "meeting",      x: 3, y:  0, w: 1, h: 8,  minH: 4, minW: 1 },
+    { i: "opportunity",  x: 1, y:  0, w: 3, h: 8,  minH: 4, minW: 1 },
     { i: "recap",        x: 0, y:  8, w: 2, h: 7,  minH: 3, minW: 1 },
     { i: "news",         x: 2, y:  8, w: 2, h: 7,  minH: 3, minW: 1 },
     { i: "tech",         x: 0, y: 15, w: 2, h: 10, minH: 6, minW: 1 },
@@ -105,26 +103,24 @@ const DEFAULT_LAYOUTS: GridLayouts = {
   md: [
     { i: "stakeholders", x: 0, y:  0, w: 1, h: 8 },
     { i: "opportunity",  x: 1, y:  0, w: 1, h: 8 },
-    { i: "meeting",      x: 0, y:  8, w: 1, h: 7 },
-    { i: "recap",        x: 1, y:  8, w: 1, h: 7 },
-    { i: "news",         x: 0, y: 15, w: 2, h: 7 },
-    { i: "tech",         x: 0, y: 22, w: 1, h: 10 },
-    { i: "work",         x: 1, y: 22, w: 1, h: 10 },
+    { i: "recap",        x: 0, y:  8, w: 1, h: 7 },
+    { i: "news",         x: 1, y:  8, w: 1, h: 7 },
+    { i: "tech",         x: 0, y: 15, w: 1, h: 10 },
+    { i: "work",         x: 1, y: 15, w: 1, h: 10 },
   ],
   sm: [
     { i: "stakeholders", x: 0, y:  0, w: 1, h: 8 },
     { i: "opportunity",  x: 0, y:  8, w: 1, h: 8 },
-    { i: "meeting",      x: 0, y: 16, w: 1, h: 7 },
-    { i: "recap",        x: 0, y: 23, w: 1, h: 7 },
-    { i: "news",         x: 0, y: 30, w: 1, h: 7 },
-    { i: "tech",         x: 0, y: 37, w: 1, h: 10 },
-    { i: "work",         x: 0, y: 47, w: 1, h: 10 },
+    { i: "recap",        x: 0, y: 16, w: 1, h: 7 },
+    { i: "news",         x: 0, y: 23, w: 1, h: 7 },
+    { i: "tech",         x: 0, y: 30, w: 1, h: 10 },
+    { i: "work",         x: 0, y: 40, w: 1, h: 10 },
   ],
 };
 
 // Panels that share the same grid row — auto-height normalises to max(h) in row
 const ROW_GROUPS: string[][] = [
-  ["stakeholders", "opportunity", "meeting"],
+  ["stakeholders", "opportunity"],
   ["recap", "news"],
   ["tech", "work"],
 ];
@@ -132,7 +128,7 @@ const ROW_GROUPS: string[][] = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getLayoutKey(callId: string) {
   // v5 — bumped: 4-col grid, 1:2:1 / 2:2 layout matching reference
-  return `insphere-layout-v11-${callId}`;
+  return `insphere-layout-v12-${callId}`;
 }
 
 function loadLayouts(callId: string): GridLayouts {
@@ -468,7 +464,7 @@ export default function CallPrepDetailPage() {
                 {call.datetime}
               </span>
               <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-500 shadow-sm">
-                Call rating: <span className="font-semibold text-slate-700">{call.rating}/5</span>
+                Call rating: <span className="font-semibold text-slate-700">{call.rating * 2}/10</span>
               </span>
             </div>
             <p className="text-[13px] leading-relaxed text-slate-500">
@@ -686,14 +682,13 @@ function Sidebar() {
 const PANEL_CONFIG: Record<string, { icon: React.ElementType; title: string; iconBg: string }> = {
   stakeholders: { icon: Users,          title: "Stakeholders",           iconBg: "bg-violet-500"  },
   opportunity:  { icon: BarChart2,      title: "Opportunity Analysis",   iconBg: "bg-rose-500"    },
-  meeting:      { icon: Flag,           title: "Meeting Notes",          iconBg: "bg-blue-500"    },
   recap:        { icon: MessageCircle,  title: "Conversation Recap",     iconBg: "bg-emerald-500" },
   news:         { icon: Newspaper,      title: "Conversation Openers",   iconBg: "bg-sky-500"     },
   work:         { icon: BookOpen,       title: "Related Work",           iconBg: "bg-teal-500"    },
   tech:         { icon: Cpu,            title: "Tech Intelligence",      iconBg: "bg-indigo-500"  },
 };
 
-const EXPANDABLE_PANELS = new Set(["stakeholders", "opportunity", "meeting", "recap", "work", "news"]);
+const EXPANDABLE_PANELS = new Set(["stakeholders", "opportunity", "recap", "work", "news"]);
 
 function PanelCard({
   id, collapsed, onToggle, call, onNaturalHeight, onExpand,
@@ -890,7 +885,7 @@ function StakeholdersPanel({ call }: { call: CallData }) {
       {/* Section 1 — On this call */}
       {onCall.length > 0 && (
         <div>
-          <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">On this call</p>
+          <p className="mb-2 text-[12px] font-semibold text-slate-900">On this call</p>
           <div className="flex flex-col divide-y divide-slate-50">
             {onCall.map((s) => {
               const avatarSrc = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(s.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
@@ -926,7 +921,7 @@ function StakeholdersPanel({ call }: { call: CallData }) {
         <>
           <div className="h-px bg-slate-100" />
           <div>
-            <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">Decision makers</p>
+            <p className="mb-2 text-[12px] font-semibold text-slate-900">Decision makers</p>
             <div className="flex flex-col gap-2">
               {decisionMakers.map((s) => (
                 <div key={s.name} className="flex items-start gap-2.5">
@@ -951,7 +946,7 @@ function StakeholdersPanel({ call }: { call: CallData }) {
         <>
           <div className="h-px bg-slate-100" />
           <div>
-            <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">Tkxel on this call</p>
+            <p className="mb-2 text-[12px] font-semibold text-slate-900">Tkxel on this call</p>
             <div className="flex flex-col gap-2">
               {tkxel.map((a) => (
                 <div key={a.name} className="flex items-center gap-2.5">
@@ -1017,6 +1012,9 @@ function StakeholdersPanel({ call }: { call: CallData }) {
 // ── Opportunity analysis panel ────────────────────────────────────────────────
 function OpportunityPanel({ call }: { call: CallData }) {
   const oa = call.opportunityAnalysis;
+  const approachTurn = call.turns.find((t) => /approach/i.test(t.label));
+  const approachText = approachTurn ? approachTurn.text.split(/[.!?]/)[0] + "." : null;
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -1025,41 +1023,47 @@ function OpportunityPanel({ call }: { call: CallData }) {
       </div>
       <div className="overflow-hidden rounded-xl border border-slate-100">
         {[
-          { label: "Current Roadblock",    value: oa.roadblock      },
-          { label: "Next Milestone",        value: oa.nextMilestone  },
-          { label: "Up-sell Opportunities", value: oa.upsell         },
+          { label: "Current Roadblock", value: oa.roadblock },
+          { label: "Next Milestone",    value: oa.nextMilestone },
         ].map((row, i) => (
           <div key={row.label} className={cn("grid grid-cols-[140px_1fr] items-start gap-3 px-4 py-3", i > 0 && "border-t border-slate-100")}>
             <span className="text-[12px] font-semibold text-slate-500">{row.label}</span>
             <span className="text-[13px] leading-relaxed text-slate-700">{row.value}</span>
           </div>
         ))}
-      </div>
-
-      {oa.useCases && oa.useCases.length > 0 && (
-        <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Relevant use cases</p>
-          <div className="flex flex-wrap gap-1.5">
-            {oa.useCases.map((uc, i) => (
-              <span key={i} className="rounded-full bg-slate-100 px-3 py-1 text-[11.5px] text-slate-700">{uc}</span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {oa.serviceMapping && oa.serviceMapping.length > 0 && (
-        <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Tkxel services mapped</p>
-          <div className="grid grid-cols-2 gap-2">
-            {oa.serviceMapping.map((sm, i) => (
-              <div key={i} className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5">
-                <p className="mb-1 text-[11.5px] font-semibold text-slate-800">{sm.service}</p>
-                <p className="text-[11px] leading-snug text-slate-500">{sm.relevance}</p>
+        {/* Upsell row — with service mapping chips below */}
+        <div className="grid grid-cols-[140px_1fr] items-start gap-3 border-t border-slate-100 px-4 py-3">
+          <span className="text-[12px] font-semibold text-slate-500">Up-sell Opportunities</span>
+          <div className="flex flex-col gap-2">
+            <span className="text-[13px] leading-relaxed text-slate-700">{oa.upsell}</span>
+            {oa.serviceMapping && oa.serviceMapping.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {oa.serviceMapping.map((sm, i) => (
+                  <span key={i} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">{sm.service}</span>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
-      )}
+        {/* Use cases row */}
+        {oa.useCases && oa.useCases.length > 0 && (
+          <div className="grid grid-cols-[140px_1fr] items-start gap-3 border-t border-slate-100 px-4 py-3">
+            <span className="text-[12px] font-semibold text-slate-500">Use cases</span>
+            <div className="flex flex-wrap gap-1.5">
+              {oa.useCases.map((uc, i) => (
+                <span key={i} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11.5px] text-slate-700">{uc}</span>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Approach row */}
+        {approachText && (
+          <div className="grid grid-cols-[140px_1fr] items-start gap-3 border-t border-slate-100 px-4 py-3">
+            <span className="text-[12px] font-semibold text-slate-500">Approach</span>
+            <span className="text-[13px] leading-relaxed text-slate-700">{approachText}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1409,7 +1413,6 @@ function PreparedModal({ call, notifyStep, setNotifyStep, onClose }: {
 const DRAWER_CONFIG: Record<string, { icon: React.ElementType; title: string; accent: string }> = {
   stakeholders: { icon: Users,         title: "Stakeholder Briefing", accent: "text-violet-500"  },
   opportunity:  { icon: BarChart2,     title: "Opportunity Analysis", accent: "text-rose-500"    },
-  meeting:      { icon: Flag,          title: "Meeting Notes",        accent: "text-blue-500"    },
   recap:        { icon: MessageCircle, title: "Conversation Recap",   accent: "text-emerald-500" },
   work:         { icon: BookOpen,      title: "Related Work",         accent: "text-teal-500"    },
   news:         { icon: Newspaper,     title: "Conversation Openers", accent: "text-amber-500"   },
@@ -1660,7 +1663,7 @@ function DrawerOpportunity({ call }: { call: CallData }) {
   const oa = call.opportunityAnalysis;
   return (
     <div className="flex flex-col">
-      <DrawerTabBar tabs={["Context", "Strategy", "Risk"]} active={tab} onChange={setTab} />
+      <DrawerTabBar tabs={["Context", "Risk"]} active={tab} onChange={setTab} />
       <div className="flex flex-col gap-6 px-6 py-6">
         {tab === 0 && (
           <>
@@ -1671,10 +1674,7 @@ function DrawerOpportunity({ call }: { call: CallData }) {
             <DrawerField label="In their own words">
               <DrawerBlockquote>{oa.problemInTheirWords}</DrawerBlockquote>
             </DrawerField>
-          </>
-        )}
-        {tab === 1 && (
-          <>
+            <div className="h-px bg-slate-100" />
             <DrawerField label="What they have tried">
               <DrawerBody>{oa.whatTheyHaveTried}</DrawerBody>
             </DrawerField>
@@ -1688,7 +1688,7 @@ function DrawerOpportunity({ call }: { call: CallData }) {
             </DrawerField>
           </>
         )}
-        {tab === 2 && (
+        {tab === 1 && (
           <>
             <DrawerField label="Deal risk">
               <DrawerBody>{oa.dealRisk}</DrawerBody>
