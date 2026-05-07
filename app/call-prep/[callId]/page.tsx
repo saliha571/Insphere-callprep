@@ -1052,23 +1052,12 @@ function OpportunityPanel({ call }: { call: CallData }) {
             {oa.serviceMapping && oa.serviceMapping.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {oa.serviceMapping.map((sm, i) => (
-                  <span key={i} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">{sm.service}</span>
+                  <span key={i} className="cursor-pointer rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100">{sm.service}</span>
                 ))}
               </div>
             )}
           </div>
         </div>
-        {/* Use cases row */}
-        {oa.useCases && oa.useCases.length > 0 && (
-          <div className="grid grid-cols-[140px_1fr] items-start gap-3 border-t border-slate-100 px-4 py-3">
-            <span className="text-[12px] font-semibold text-slate-500">Use cases</span>
-            <div className="flex flex-wrap gap-1.5">
-              {oa.useCases.map((uc, i) => (
-                <span key={i} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11.5px] text-slate-700">{uc}</span>
-              ))}
-            </div>
-          </div>
-        )}
         {/* Approach row */}
         {approachText && (
           <div className="grid grid-cols-[140px_1fr] items-start gap-3 border-t border-slate-100 px-4 py-3">
