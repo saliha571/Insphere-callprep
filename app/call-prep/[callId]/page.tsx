@@ -890,25 +890,27 @@ function StakeholdersPanel({ call }: { call: CallData }) {
             {onCall.map((s) => {
               const avatarSrc = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(s.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
               return (
-                <div key={s.name} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
+                <div key={s.name} className={cn(
+                  "flex items-center gap-3 rounded-xl px-2 py-2 first:pt-2 last:pb-2",
+                  s.isDecisionMaker ? "bg-amber-50 ring-1 ring-amber-200" : ""
+                )}>
                   <div className={cn("relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-full", s.color)}>
                     <img src={avatarSrc} alt={s.name} className="h-9 w-9 object-cover" />
                     <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-[12.5px] font-semibold leading-tight text-slate-900">{s.name}</p>
-                      {s.isDecisionMaker && (
-                        <span title={s.decisionMakerReason ?? "Decision maker"}>
-                          <Star className="h-3 w-3 text-amber-400" fill="currentColor" />
-                        </span>
-                      )}
-                    </div>
+                    <p className="text-[12.5px] font-semibold leading-tight text-slate-900">{s.name}</p>
                     <p className="truncate text-[11px] text-slate-400">{s.role}</p>
                   </div>
-                  <span className="flex-shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                    On call
-                  </span>
+                  <div className="flex flex-shrink-0 flex-col items-end gap-1">
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">On call</span>
+                    {s.isDecisionMaker && (
+                      <span className="flex items-center gap-0.5 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                        <Star className="h-2.5 w-2.5" fill="currentColor" />
+                        Decision maker
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -1017,10 +1019,6 @@ function OpportunityPanel({ call }: { call: CallData }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Recap</p>
-        <p className="text-[13px] leading-relaxed text-slate-700">{oa.recap}</p>
-      </div>
       <div className="overflow-hidden rounded-xl border border-slate-100">
         {[
           { label: "Current Roadblock", value: oa.roadblock },
