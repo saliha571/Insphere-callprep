@@ -3,9 +3,11 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -13,7 +15,7 @@ import type { LayoutItem } from "react-grid-layout";
 type GridLayouts = { [breakpoint: string]: LayoutItem[] };
 import { cn } from "@/lib/utils";
 import { CALLS, QA_BANK, type CallData } from "@/lib/call-data";
-import type { InternalMatch } from "@/lib/call-data";
+import type { InternalMatch, GeoPresenceCard } from "@/lib/call-data";
 import { getDoneCalls, markCallDone, unmarkCallDone } from "@/lib/done-calls";
 import {
   AlertTriangle,
@@ -44,14 +46,17 @@ import {
   MessageSquare,
   Monitor,
   Newspaper,
-  Phone,
   PlusCircle,
   Search,
   Send,
   Share2,
   Sparkles,
   Star,
+  Sun,
+  Moon,
   TrendingUp,
+  ThumbsDown,
+  ThumbsUp,
   UserPlus,
   Users,
   X,
@@ -77,48 +82,49 @@ const BASE_PANELS = [
 
 type BasePanelId = (typeof BASE_PANELS)[number];
 
+/** Shown when marking a call prep as done (prototype). */
+const MARK_DONE_NOTIFY_SUMMARY = "Notified Sarah Chen (Director).";
+
 // ── Default layouts per breakpoint ────────────────────────────────────────────
 // Matches the Salesforce Canvas reference screenshot exactly:
 //   Row 1 (25% · 50% · 25%): Stakeholders | Opportunity Analysis | Meeting Notes
 //   Row 2 (50% · 50%):        Conversation Recap | Related News
 //   Row 3 (100%):             Related Work
 //
-// rowHeight=34, margin=16 → 1 grid unit = 50px
-//   h=8  → 384px  (row 1 — taller to fit stakeholders + opportunity depth)
-//   h=7  → 334px  (row 2 — recap + news)
-//   h=10 → 484px  (row 3 — related work, 2 side-by-side cards)
+// rowHeight=50, margin=16 → 1 grid unit = 66px
+//   h=4  → 248px  both rows visible at once in viewport
 //
 // Row groups used by auto-height normaliser so all panels in a row stay equal:
 //   ROW_GROUPS[0] = ["stakeholders","opportunity","meeting"]
 //   ROW_GROUPS[1] = ["recap","news"]
-//   ROW_GROUPS[2] = ["work"]
+//   ROW_GROUPS[2] = ["tech","work"]
 const DEFAULT_LAYOUTS: GridLayouts = {
   lg: [
-    { i: "stakeholders", x: 0, y:  0, w: 1, h: 8,  minH: 4, minW: 1 },
-    { i: "opportunity",  x: 1, y:  0, w: 2, h: 8,  minH: 4, minW: 1 },
-    { i: "meeting",      x: 3, y:  0, w: 1, h: 8,  minH: 4, minW: 1 },
-    { i: "recap",        x: 0, y:  8, w: 2, h: 7,  minH: 3, minW: 1 },
-    { i: "news",         x: 2, y:  8, w: 2, h: 7,  minH: 3, minW: 1 },
-    { i: "tech",         x: 0, y: 15, w: 2, h: 10, minH: 6, minW: 1 },
-    { i: "work",         x: 2, y: 15, w: 2, h: 10, minH: 6, minW: 1 },
+    { i: "stakeholders", x: 0, y:  0,  w: 1, h: 6,  minH: 2, minW: 1 },
+    { i: "opportunity",  x: 1, y:  0,  w: 2, h: 6,  minH: 2, minW: 1 },
+    { i: "meeting",      x: 3, y:  0,  w: 1, h: 6,  minH: 2, minW: 1 },
+    { i: "recap",        x: 0, y:  6,  w: 2, h: 6,  minH: 2, minW: 1 },
+    { i: "news",         x: 2, y:  6,  w: 2, h: 6,  minH: 2, minW: 1 },
+    { i: "tech",         x: 0, y: 12,  w: 2, h: 8,  minH: 2, minW: 1 },
+    { i: "work",         x: 2, y: 12,  w: 2, h: 8,  minH: 2, minW: 1 },
   ],
   md: [
-    { i: "stakeholders", x: 0, y:  0, w: 1, h: 8 },
-    { i: "opportunity",  x: 1, y:  0, w: 1, h: 8 },
-    { i: "meeting",      x: 0, y:  8, w: 1, h: 7 },
-    { i: "recap",        x: 1, y:  8, w: 1, h: 7 },
-    { i: "news",         x: 0, y: 15, w: 2, h: 7 },
-    { i: "tech",         x: 0, y: 22, w: 1, h: 10 },
-    { i: "work",         x: 1, y: 22, w: 1, h: 10 },
+    { i: "stakeholders", x: 0, y:  0,  w: 1, h: 6 },
+    { i: "opportunity",  x: 1, y:  0,  w: 1, h: 6 },
+    { i: "meeting",      x: 0, y:  6,  w: 1, h: 6 },
+    { i: "recap",        x: 1, y:  6,  w: 1, h: 6 },
+    { i: "news",         x: 0, y: 12,  w: 2, h: 6 },
+    { i: "tech",         x: 0, y: 18,  w: 1, h: 8 },
+    { i: "work",         x: 1, y: 18,  w: 1, h: 8 },
   ],
   sm: [
-    { i: "stakeholders", x: 0, y:  0, w: 1, h: 8 },
-    { i: "opportunity",  x: 0, y:  8, w: 1, h: 8 },
-    { i: "meeting",      x: 0, y: 16, w: 1, h: 7 },
-    { i: "recap",        x: 0, y: 23, w: 1, h: 7 },
-    { i: "news",         x: 0, y: 30, w: 1, h: 7 },
-    { i: "tech",         x: 0, y: 37, w: 1, h: 10 },
-    { i: "work",         x: 0, y: 47, w: 1, h: 10 },
+    { i: "stakeholders", x: 0, y:  0,  w: 1, h: 6 },
+    { i: "opportunity",  x: 0, y:  6,  w: 1, h: 6 },
+    { i: "meeting",      x: 0, y: 12,  w: 1, h: 6 },
+    { i: "recap",        x: 0, y: 18,  w: 1, h: 6 },
+    { i: "news",         x: 0, y: 24,  w: 1, h: 6 },
+    { i: "tech",         x: 0, y: 30,  w: 1, h: 8 },
+    { i: "work",         x: 0, y: 38,  w: 1, h: 8 },
   ],
 };
 
@@ -132,7 +138,7 @@ const ROW_GROUPS: string[][] = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getLayoutKey(callId: string) {
   // v5 — bumped: 4-col grid, 1:2:1 / 2:2 layout matching reference
-  return `insphere-layout-v13-${callId}`;
+  return `insphere-layout-v27-${callId}`;
 }
 
 function loadLayouts(callId: string): GridLayouts {
@@ -193,52 +199,11 @@ export default function CallPrepDetailPage() {
   const [gridWidth, setGridWidth] = useState(0);
   const [activeDrawer, setActiveDrawer] = useState<string | null>(null);
   const [isDone, setIsDone] = useState(false);
-  const [preparedModalOpen, setPreparedModalOpen] = useState(false);
-  const [notifyStep, setNotifyStep] = useState(-1);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const msgId = useRef(0);
 
-  // ── Auto-height: measure each panel's natural content height once on mount ──
-  // rowHeight=34, margin=16 → one grid unit = 50px
-  // panel total px = contentPx + 47 (header) + 24 (body padding top+bottom)
-  // h = ceil((panel total + 16 margin) / 50)
-  const hasMeasured = useRef<Set<string>>(new Set());
-  const pendingHeights = useRef<Record<string, number>>({});
-  const heightBatchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleNaturalHeight = useCallback((id: string, contentPx: number) => {
-    if (hasMeasured.current.has(id)) return;
-    // Guard: ignore measurements that fired before content painted (height = 0)
-    if (contentPx < 20) return;
-    hasMeasured.current.add(id);
-    const totalPx = contentPx + 47 + 24; // header + body padding
-    const measuredH = Math.max(3, Math.ceil((totalPx + 16) / 50));
-    // Never shrink below the DEFAULT_LAYOUTS h for this panel
-    const defaultH = DEFAULT_LAYOUTS.lg.find((item: LayoutItem) => item.i === id)?.h ?? 3;
-    pendingHeights.current[id] = Math.max(measuredH, defaultH);
-    if (heightBatchTimer.current) clearTimeout(heightBatchTimer.current);
-    heightBatchTimer.current = setTimeout(() => {
-      const pending = { ...pendingHeights.current };
-      // Normalise: all panels in the same row share the tallest h
-      const normalised = { ...pending };
-      ROW_GROUPS.forEach((group) => {
-        const measured = group.filter((p) => normalised[p] !== undefined);
-        if (measured.length === 0) return;
-        const maxH = Math.max(...measured.map((p) => normalised[p]));
-        measured.forEach((p) => { normalised[p] = maxH; });
-      });
-      setLayouts((prev: GridLayouts) => {
-        const lg = (prev.lg ?? DEFAULT_LAYOUTS.lg).map((item: LayoutItem) =>
-          normalised[item.i] !== undefined ? { ...item, h: normalised[item.i] } : item
-        );
-        const updated = { ...prev, lg };
-        saveLayouts(callId, updated);
-        return updated;
-      });
-    }, 80);
-  }, [callId]);
 
   // Measure grid container so we can pass `width` directly to <Responsive>
   useEffect(() => {
@@ -254,8 +219,6 @@ export default function CallPrepDetailPage() {
     setLayouts(loadLayouts(callId));
     setCollapsed(new Set());
     setAgentCards([]);
-    hasMeasured.current = new Set();
-    pendingHeights.current = {};
     setIsDone(getDoneCalls().includes(callId));
   }, [callId]);
 
@@ -284,7 +247,7 @@ export default function CallPrepDetailPage() {
       return {
         title: "Industry Overview",
         icon: "industry",
-        answer: `${call.company} operates in the ${call.companyDetails.industry} space — a sector where boutique specialists win on depth of domain knowledge rather than platform breadth. With ${call.companyDetails.employees} employees and ${call.companyDetails.revenue} in revenue, the team is deliberately lean. They are not buying scale — they are buying precision tools that make a small team look bigger and smarter.\n\nIn this vertical, trust is currency. Buyers like ${call.person} have seen dozens of vendors and will immediately discount anyone who leads with a pitch. The entry point is always the problem, not the solution.\n\nThe key dynamic to understand: firms like ${call.company} are squeezed between growing client demand and headcount constraints. The opportunity is automation that removes manual overhead without disrupting the expert judgment at the core of their value proposition.`,
+        answer: `${call.company} operates in the ${call.companyDetails.industry} space, a sector where boutique specialists win on depth of domain knowledge rather than platform breadth. With ${call.companyDetails.employees} employees and ${call.companyDetails.revenue} in revenue, the team is deliberately lean. They are not buying scale, they are buying precision tools that make a small team look bigger and smarter.\n\nIn this vertical, trust is currency. Buyers like ${call.person} have seen dozens of vendors and will immediately discount anyone who leads with a pitch. The entry point is always the problem, not the solution.\n\nThe key dynamic to understand: firms like ${call.company} are squeezed between growing client demand and headcount constraints. The opportunity is automation that removes manual overhead without disrupting the expert judgment at the core of their value proposition.`,
       };
     }
     if (/stakeholder|who|contact|person|people/.test(lc)) {
@@ -292,7 +255,7 @@ export default function CallPrepDetailPage() {
         title: "Stakeholder Briefing",
         icon: "stakeholders",
         answer: call.stakeholders.map(s =>
-          `${s.name} (${s.role}) — the primary contact on this call. ${call.turns.find(t => /verdict/i.test(t.label))?.text ?? ""}`
+          `${s.name} (${s.role}), the primary contact on this call. ${call.turns.find(t => /verdict/i.test(t.label))?.text ?? ""}`
         ).join("\n\n"),
       };
     }
@@ -306,7 +269,7 @@ export default function CallPrepDetailPage() {
     }
     if (/hook|angle|opener|icebreak|conversation/.test(lc)) {
       return {
-        title: "Conversation Openers",
+        title: "Conversation opener",
         icon: "news",
         answer: call.relatedNews.items.map((item, i) => `${i + 1}. ${item.headline}`).join("\n\n"),
       };
@@ -315,7 +278,7 @@ export default function CallPrepDetailPage() {
       return {
         title: "Risks & Blockers",
         icon: "risk",
-        answer: `The current roadblock is: ${call.opportunityAnalysis.roadblock}\n\nWhat to watch for on this call: budget ownership may be unclear — qualify this early. Technical stakeholders may not be present. Any incumbent vendor relationship could slow the decision significantly. Don't push for a close until these are surfaced.`,
+        answer: `The current roadblock is: ${call.opportunityAnalysis.roadblock}\n\nWhat to watch for on this call: budget ownership may be unclear, qualify this early. Technical stakeholders may not be present. Any incumbent vendor relationship could slow the decision significantly. Don't push for a close until these are surfaced.`,
       };
     }
     if (/meeting|agenda|goal|objective|topic|discuss/.test(lc)) {
@@ -413,8 +376,7 @@ export default function CallPrepDetailPage() {
                 } else {
                   markCallDone(callId);
                   setIsDone(true);
-                  setPreparedModalOpen(true);
-                  setNotifyStep(0);
+                  showToast(MARK_DONE_NOTIFY_SUMMARY);
                 }
               }}
               className={cn(
@@ -456,8 +418,11 @@ export default function CallPrepDetailPage() {
                 {call.company}
               </h1>
               <span className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-500 shadow-sm">
-                <Clock className="h-3 w-3 text-amber-500" />
+                <CallTimeIcon datetime={call.datetime} />
                 {call.datetime}
+                {call.timezone && (
+                  <span className="font-normal text-slate-400">{call.timezone}</span>
+                )}
               </span>
               <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-500 shadow-sm">
                 Call rating: <span className="font-semibold text-slate-700">{call.rating * 2}/10</span>
@@ -514,7 +479,7 @@ export default function CallPrepDetailPage() {
             layouts={layouts}
             breakpoints={{ lg: 1024, md: 640, sm: 0 }}
             cols={{ lg: 4, md: 2, sm: 1 }}
-            rowHeight={34}
+            rowHeight={50}
             margin={[16, 16]}
             containerPadding={[0, 0]}
             onLayoutChange={handleLayoutChange}
@@ -529,15 +494,18 @@ export default function CallPrepDetailPage() {
                 // h-full + overflow-hidden required for panels to fill their RGL cell
                 <div key={id} className="h-full overflow-hidden">
                   {isAgent && agentCard ? (
-                    <AgentResponseCard card={agentCard} />
+                    <AgentResponseCard
+                      card={agentCard}
+                      onAIFeedbackSubmitted={() => showToast("Thanks, your feedback helps train the model.")}
+                    />
                   ) : (
                     <PanelCard
                       id={id}
                       collapsed={collapsed.has(id)}
                       onToggle={() => toggleCollapse(id)}
                       call={call}
-                      onNaturalHeight={handleNaturalHeight}
                       onExpand={setActiveDrawer}
+                      onAIFeedbackSubmitted={() => showToast("Thanks, your feedback helps train the model.")}
                     />
                   )}
                 </div>
@@ -600,15 +568,6 @@ export default function CallPrepDetailPage() {
           onMessageChange={setSendMsg}
           onSend={sendToTeammate}
           onClose={() => setSendModalOpen(false)}
-        />
-      )}
-
-      {preparedModalOpen && (
-        <PreparedModal
-          call={call}
-          notifyStep={notifyStep}
-          setNotifyStep={setNotifyStep}
-          onClose={() => { setPreparedModalOpen(false); setNotifyStep(-1); }}
         />
       )}
 
@@ -680,34 +639,256 @@ const PANEL_CONFIG: Record<string, { icon: React.ElementType; title: string; ico
   opportunity:  { icon: BarChart2,      title: "Opportunity Analysis",   iconBg: "bg-rose-500"    },
   meeting:      { icon: Flag,           title: "Strategy",               iconBg: "bg-blue-500"    },
   recap:        { icon: MessageCircle,  title: "Conversation Recap",     iconBg: "bg-emerald-500" },
-  news:         { icon: Newspaper,      title: "Conversation Openers",   iconBg: "bg-sky-500"     },
+  news:         { icon: Newspaper,      title: "Conversation opener",   iconBg: "bg-sky-500"     },
   work:         { icon: BookOpen,       title: "Related Work",           iconBg: "bg-teal-500"    },
-  tech:         { icon: Cpu,            title: "Tech Intelligence",      iconBg: "bg-indigo-500"  },
+  tech:         { icon: Cpu,            title: "About the client",       iconBg: "bg-indigo-500"  },
 };
 
 const EXPANDABLE_PANELS = new Set(["stakeholders", "opportunity", "meeting", "recap", "work", "news"]);
 
+function CallTimeIcon({ datetime }: { datetime: string }) {
+  const match = datetime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  let hour = match ? parseInt(match[1]) : 12;
+  const period = match?.[3]?.toUpperCase();
+  if (period === "PM" && hour !== 12) hour += 12;
+  if (period === "AM" && hour === 12) hour = 0;
+  return hour >= 6 && hour < 18
+    ? <Sun className="h-3 w-3 text-amber-400" />
+    : <Moon className="h-3 w-3 text-indigo-400" />;
+}
+
+// ── Panel AI feedback (like / dislike + notes for training) ───────────────────
+const FEEDBACK_STORAGE_KEY = "insphere-ai-panel-feedback";
+
+function AIFeedbackModal({
+  open,
+  sentiment,
+  widgetId,
+  widgetTitle,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  sentiment: "like" | "dislike";
+  widgetId: string;
+  widgetTitle: string;
+  onClose: () => void;
+  onSubmit: (notes: string) => void;
+}) {
+  const [notes, setNotes] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (open) setNotes("");
+  }, [open, sentiment, widgetId]);
+
+  if (!mounted || !open) return null;
+
+  function handleSubmit() {
+    try {
+      const raw = localStorage.getItem(FEEDBACK_STORAGE_KEY);
+      const prev = raw ? JSON.parse(raw) : [];
+      prev.push({
+        widgetId,
+        widgetTitle,
+        sentiment,
+        notes: notes.trim(),
+        at: Date.now(),
+      });
+      localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(prev.slice(-200)));
+    } catch {
+      /* ignore quota / parse */
+    }
+    onSubmit(notes.trim());
+    onClose();
+  }
+
+  const modal = (
+    <>
+      <div className="fixed inset-0 z-[10000] bg-black/30 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="fixed inset-0 z-[10000] flex items-center justify-center pointer-events-none p-4">
+        <div
+          className="pointer-events-auto w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[15px] font-bold text-slate-900">Feedback for AI training</p>
+              <p className="mt-0.5 text-[12px] text-slate-400">{widgetTitle}</p>
+            </div>
+            <button type="button" onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+            {sentiment === "like" ? (
+              <ThumbsUp className="h-4 w-4 flex-shrink-0 text-emerald-600" />
+            ) : (
+              <ThumbsDown className="h-4 w-4 flex-shrink-0 text-rose-600" />
+            )}
+            <span className="text-[13px] font-semibold text-slate-700">{sentiment === "like" ? "Like" : "Dislike"}</span>
+          </div>
+
+          <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Notes</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+            placeholder="What worked or what should change?"
+            className="mb-5 w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-[13px] leading-relaxed text-slate-700 outline-none ring-slate-200 placeholder:text-slate-300 focus:ring-2"
+          />
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-slate-200 px-4 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="rounded-xl bg-slate-900 px-4 py-2 text-[13px] font-semibold text-white hover:bg-slate-800"
+            >
+              Submit feedback
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  return createPortal(modal, document.body);
+}
+
+function PanelAIFeedbackMenu({
+  widgetId,
+  widgetTitle,
+  onSubmitted,
+}: {
+  widgetId: string;
+  widgetTitle: string;
+  onSubmitted?: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [modal, setModal] = useState<{ sentiment: "like" | "dislike" } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const MENU_W = 148;
+
+  useLayoutEffect(() => {
+    if (!menuOpen || !btnRef.current) {
+      setMenuPos(null);
+      return;
+    }
+    const r = btnRef.current.getBoundingClientRect();
+    setMenuPos({
+      top: r.bottom + 4,
+      left: Math.min(Math.max(8, r.right - MENU_W), window.innerWidth - MENU_W - 8),
+    });
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (btnRef.current?.contains(t)) return;
+      if (menuRef.current?.contains(t)) return;
+      setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [menuOpen]);
+
+  const menuPortal =
+    menuOpen && menuPos ? (
+      createPortal(
+        <div
+          ref={menuRef}
+          role="menu"
+          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, width: MENU_W }}
+          className="z-[10001] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              setModal({ sentiment: "like" });
+              setMenuOpen(false);
+            }}
+          >
+            <ThumbsUp className="h-3.5 w-3.5 text-emerald-600" />
+            Like
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              setModal({ sentiment: "dislike" });
+              setMenuOpen(false);
+            }}
+          >
+            <ThumbsDown className="h-3.5 w-3.5 text-rose-600" />
+            Dislike
+          </button>
+        </div>,
+        document.body,
+      )
+    ) : null;
+
+  return (
+    <div className="flex-shrink-0 print:hidden">
+      <button
+        ref={btnRef}
+        type="button"
+        aria-expanded={menuOpen}
+        aria-haspopup="menu"
+        onClick={(e) => {
+          e.stopPropagation();
+          setMenuOpen((v) => !v);
+        }}
+        className={cn(
+          "flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600",
+          menuOpen && "bg-slate-100 text-slate-600",
+        )}
+      >
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", menuOpen && "rotate-180")} />
+      </button>
+
+      {menuPortal}
+
+      {modal && (
+        <AIFeedbackModal
+          open
+          sentiment={modal.sentiment}
+          widgetId={widgetId}
+          widgetTitle={widgetTitle}
+          onClose={() => setModal(null)}
+          onSubmit={() => onSubmitted?.()}
+        />
+      )}
+    </div>
+  );
+}
+
 function PanelCard({
-  id, collapsed, onToggle, call, onNaturalHeight, onExpand,
+  id, collapsed, onToggle, call, onExpand, onAIFeedbackSubmitted,
 }: {
   id: string; collapsed: boolean; onToggle: () => void; call: CallData;
-  onNaturalHeight?: (id: string, px: number) => void;
   onExpand?: (id: string) => void;
+  onAIFeedbackSubmitted?: () => void;
 }) {
   const cfg = PANEL_CONFIG[id] ?? { icon: Sparkles, title: id, iconBg: "bg-slate-400" };
   const Icon = cfg.icon;
-
-  // Measure the inner content div (auto-height) — not the flex-1 body wrapper
-  const contentMeasureRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = contentMeasureRef.current;
-    if (!el || !onNaturalHeight) return;
-    const report = () => onNaturalHeight(id, el.getBoundingClientRect().height);
-    const ro = new ResizeObserver(report);
-    ro.observe(el);
-    report();
-    return () => ro.disconnect();
-  }, [id, onNaturalHeight]);
 
   return (
     <div
@@ -722,7 +903,7 @@ function PanelCard({
       {/* Header — relative so it renders above the overlays */}
       <div className="relative flex flex-shrink-0 items-center gap-1 border-b border-slate-100 px-4 py-3.5">
         <div className="flex flex-shrink-0 items-center justify-center">
-          <Icon className="h-[18px] w-[18px] text-slate-400" />
+          <Icon className="h-3.5 w-3.5 text-slate-400" />
         </div>
         <span className="flex-1 text-[14px] font-semibold text-slate-900">{cfg.title}</span>
         {EXPANDABLE_PANELS.has(id) && onExpand && (
@@ -734,8 +915,15 @@ function PanelCard({
             <Maximize2 className="h-3 w-3" />
           </button>
         )}
-        <div className="drag-handle flex h-6 w-6 cursor-grab items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-500 active:cursor-grabbing print:hidden">
-          <GripVertical className="h-3.5 w-3.5" />
+        <div className="flex flex-shrink-0 items-center gap-0.5 print:hidden">
+          <div className="drag-handle flex h-6 w-6 cursor-grab items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-500 active:cursor-grabbing">
+            <GripVertical className="h-3.5 w-3.5" />
+          </div>
+          <PanelAIFeedbackMenu
+            widgetId={id}
+            widgetTitle={cfg.title}
+            onSubmitted={onAIFeedbackSubmitted}
+          />
         </div>
       </div>
 
@@ -743,14 +931,11 @@ function PanelCard({
       <div
         data-panel-body
         className={cn(
-          "relative flex-1 overflow-y-auto px-4 py-3 transition-all duration-300",
+          "relative flex-1 overflow-y-auto px-4 py-3 transition-all duration-300 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-track]:bg-transparent",
           collapsed && "hidden"
         )}
       >
-        {/* Inner auto-height wrapper — observed by ResizeObserver */}
-        <div ref={contentMeasureRef}>
-          <PanelContent id={id} call={call} />
-        </div>
+        <PanelContent id={id} call={call} />
       </div>
     </div>
   );
@@ -836,7 +1021,7 @@ function QuickAccessStrip({ call, onOpenDrawer }: { call: CallData; onOpenDrawer
               {lastEmail && <span className="ml-auto text-[10.5px] text-slate-300">{lastEmail.timestamp}</span>}
             </div>
             <p className="mt-0.5 truncate text-[12.5px] font-semibold text-slate-800">
-              {lastEmail ? lastEmail.person.split(" ")[0] : "—"} — {lastEmail?.note.split("\n\n")[0].split("\n")[0].slice(0, 60)}
+              {lastEmail ? `${lastEmail.person.split(" ")[0]}: ${lastEmail.note.split("\n\n")[0].split("\n")[0].slice(0, 60)}` : ""}
             </p>
           </div>
         </button>
@@ -881,71 +1066,47 @@ function StakeholdersPanel({ call }: { call: CallData }) {
     <div className="flex flex-col gap-4">
       {/* Section 1 — On this call */}
       {onCall.length > 0 && (
-        <div>
-          <p className="mb-2 text-[12px] font-semibold text-slate-900">On this call</p>
-          <div className="flex flex-col divide-y divide-slate-50">
-            {onCall.map((s) => {
-              const avatarSrc = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(s.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
-              return (
-                <div key={s.name} className={cn(
-                  "flex items-center gap-3 rounded-xl px-2 py-2 first:pt-2 last:pb-2",
-                  s.isDecisionMaker ? "bg-amber-50 ring-1 ring-amber-200" : ""
-                )}>
-                  <div className={cn("relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-full", s.color)}>
-                    <img src={avatarSrc} alt={s.name} className="h-9 w-9 object-cover" />
-                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px] font-semibold leading-tight text-slate-900">{s.name}</p>
-                    <p className="truncate text-[11px] text-slate-400">{s.role}</p>
-                  </div>
-                  <div className="flex flex-shrink-0 flex-col items-end gap-1">
-                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">On call</span>
-                    {s.isDecisionMaker && (
-                      <span className="flex items-center gap-0.5 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                        <Star className="h-2.5 w-2.5" fill="currentColor" />
-                        Decision maker
-                      </span>
-                    )}
-                  </div>
+        <div className="flex flex-col divide-y divide-slate-50">
+          {onCall.map((s) => {
+            const avatarSrc = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(s.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+            return (
+              <div key={s.name} className="flex items-start gap-3 rounded-xl px-2 py-2 first:pt-2 last:pb-2">
+                <div className={cn("relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-full", s.color)}>
+                  <img src={avatarSrc} alt={s.name} className="h-9 w-9 object-cover" />
+                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-400" />
                 </div>
-              );
-            })}
-          </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[13px] font-semibold leading-tight text-slate-900">{s.name}</p>
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">On call</span>
+                  </div>
+                  <p className="truncate text-[11.5px] text-slate-500">{s.role}</p>
+                  {s.isDecisionMaker && s.decisionMakerReason && (
+                    <p className="mt-0.5 text-[11.5px] italic leading-snug text-slate-500">{s.decisionMakerReason}</p>
+                  )}
+                </div>
+                <a
+                  href={s.linkedin ?? "#"}
+                  onClick={(e) => { if (!s.linkedin || s.linkedin === "#") e.preventDefault(); }}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto flex h-6 w-6 flex-shrink-0 items-center justify-center rounded bg-[#0a66c2]/8 text-[#0a66c2] transition-colors hover:bg-[#0a66c2]/15"
+                >
+                  <LinkedInIcon className="h-3 w-3" />
+                </a>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Section 2 — Decision makers */}
-      {decisionMakers.length > 0 && (
-        <>
-          <div className="h-px bg-slate-100" />
-          <div>
-            <p className="mb-2 text-[12px] font-semibold text-slate-900">Decision makers</p>
-            <div className="flex flex-col gap-2">
-              {decisionMakers.map((s) => (
-                <div key={s.name} className="flex items-start gap-2.5">
-                  <div className={cn("mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white", s.color)}>
-                    {s.initials}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px] font-semibold text-slate-900">{s.name}</p>
-                    {s.decisionMakerReason && (
-                      <p className="mt-0.5 text-[11px] italic leading-snug text-slate-400">{s.decisionMakerReason}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
 
       {/* Section 3 — Tkxel on this call */}
       {tkxel.length > 0 && (
         <>
           <div className="h-px bg-slate-100" />
           <div>
-            <p className="mb-2 text-[12px] font-semibold text-slate-900">Tkxel on this call</p>
+            <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">Tkxel on this call</p>
             <div className="flex flex-col gap-2">
               {tkxel.map((a) => (
                 <div key={a.name} className="flex items-center gap-2.5">
@@ -953,8 +1114,8 @@ function StakeholdersPanel({ call }: { call: CallData }) {
                     {a.initials}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px] font-semibold text-slate-900">{a.name}</p>
-                    <p className="text-[11px] text-slate-400">{a.role}</p>
+                    <p className="text-[13px] font-semibold text-slate-900">{a.name}</p>
+                    <p className="text-[11.5px] text-slate-500">{a.role}</p>
                   </div>
                   <span className="flex-shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
                     Internal
@@ -977,8 +1138,8 @@ function StakeholdersPanel({ call }: { call: CallData }) {
                   <img src={avatarSrc} alt={s.name} className="h-9 w-9 object-cover" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12.5px] font-semibold leading-tight text-slate-900">{s.name}</p>
-                  <p className="truncate text-[11px] text-slate-400">{s.role}</p>
+                  <p className="text-[13px] font-semibold leading-tight text-slate-900">{s.name}</p>
+                  <p className="truncate text-[11.5px] text-slate-500">{s.role}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <a href={s.linkedin ?? "#"} onClick={(e) => { if (!s.linkedin || s.linkedin === "#") e.preventDefault(); }} className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-[#0a66c2]/8 text-[#0a66c2] transition-colors hover:bg-[#0a66c2]/15">
@@ -994,16 +1155,6 @@ function StakeholdersPanel({ call }: { call: CallData }) {
         </div>
       )}
 
-      <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
-        <button className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2 text-[12px] font-medium text-slate-600 transition-colors hover:bg-slate-50">
-          <UserPlus className="h-3.5 w-3.5" />
-          Add stakeholder
-        </button>
-        <button className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2 text-[12px] font-medium text-slate-600 transition-colors hover:bg-slate-50">
-          <PlusCircle className="h-3.5 w-3.5" />
-          Start channel
-        </button>
-      </div>
     </div>
   );
 }
@@ -1016,15 +1167,16 @@ function OpportunityPanel({ call }: { call: CallData }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Client need highlight */}
-      <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
-        <div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-blue-100">
-          <Flag className="h-3.5 w-3.5 text-blue-600" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-blue-500">Client need</p>
-          <p className="text-[13px] leading-relaxed text-slate-700">{oa.recap}</p>
-        </div>
+      {/* Client need — plain with keyword highlights */}
+      <div className="flex flex-col gap-1">
+        <p className="text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">Client need</p>
+        <p className="text-[13px] leading-relaxed text-slate-700">
+          {oa.recap.split(/\b(need|service)\b/gi).map((part, i) =>
+            /^(need|service)$/i.test(part)
+              ? <mark key={i} className="rounded bg-blue-100 px-0.5 text-blue-700 not-italic">{part}</mark>
+              : part
+          )}
+        </p>
       </div>
       <div className="overflow-hidden rounded-xl border border-slate-100">
         {[
@@ -1032,29 +1184,29 @@ function OpportunityPanel({ call }: { call: CallData }) {
           { label: "Next Milestone",    value: oa.nextMilestone },
         ].map((row, i) => (
           <div key={row.label} className={cn("grid grid-cols-[140px_1fr] items-start gap-3 px-4 py-3", i > 0 && "border-t border-slate-100")}>
-            <span className="text-[12px] font-semibold text-slate-500">{row.label}</span>
+            <span className="text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">{row.label}</span>
             <span className="text-[13px] leading-relaxed text-slate-700">{row.value}</span>
           </div>
         ))}
-        {/* Upsell row — with service mapping chips below */}
+        {/* Upsell row */}
         <div className="grid grid-cols-[140px_1fr] items-start gap-3 border-t border-slate-100 px-4 py-3">
-          <span className="text-[12px] font-semibold text-slate-500">Up-sell Opportunities</span>
-          <div className="flex flex-col gap-2">
-            <span className="text-[13px] leading-relaxed text-slate-700">{oa.upsell}</span>
-            {oa.serviceMapping && oa.serviceMapping.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {oa.serviceMapping.map((sm, i) => (
-                  <span key={i} className="cursor-pointer rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100">{sm.service}</span>
-                ))}
-              </div>
-            )}
-          </div>
+          <span className="text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">Up-sell Opportunities</span>
+          <span className="text-[13px] leading-relaxed text-slate-700">{oa.upsell}</span>
         </div>
-        {/* Approach row */}
-        {approachText && (
+        {/* Service Mapping row */}
+        {oa.serviceMapping && oa.serviceMapping.length > 0 && (
           <div className="grid grid-cols-[140px_1fr] items-start gap-3 border-t border-slate-100 px-4 py-3">
-            <span className="text-[12px] font-semibold text-slate-500">Approach</span>
-            <span className="text-[13px] leading-relaxed text-slate-700">{approachText}</span>
+            <span className="text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">Service Mapping</span>
+            <div className="flex flex-col gap-3">
+              {oa.serviceMapping.map((sm, i) => (
+                <div key={i} className="flex flex-col gap-0.5">
+                  <span className="w-fit cursor-pointer rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 transition-colors hover:bg-blue-100">{sm.service}</span>
+                  {sm.relevance && (
+                    <p className="text-[11.5px] leading-snug text-slate-500">{sm.relevance}</p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -1062,28 +1214,73 @@ function OpportunityPanel({ call }: { call: CallData }) {
   );
 }
 
-// ── Meeting notes panel ───────────────────────────────────────────────────────
+// ── Meeting notes panel (Strategy) ───────────────────────────────────────────
+const STRATEGY_TABS = ["Approach", "Questions"] as const;
+type StrategyTab = typeof STRATEGY_TABS[number];
+
 function MeetingNotesPanel({ call }: { call: CallData }) {
+  const [activeTab, setActiveTab] = useState<StrategyTab>("Approach");
   const approachTurn = call.turns.find((t) => /approach/i.test(t.label));
+  const questions = call.meetingNotes.discoveryArc ?? [];
+
   return (
-    <div className="flex flex-col gap-4">
-      {approachTurn && (
-        <div>
-          <p className="mb-2 text-[12px] font-semibold text-slate-800">Approach</p>
-          <p className="text-[13px] leading-relaxed text-slate-700">{approachTurn.text}</p>
+    <div className="flex flex-col h-full min-h-0">
+      {/* Tab bar — matches drawer style */}
+      <div className="-mx-4 flex flex-shrink-0 border-b border-slate-200 px-4 mb-4">
+        {STRATEGY_TABS.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              "relative px-3 pb-2.5 pt-0.5 text-[12px] font-medium transition-colors whitespace-nowrap",
+              activeTab === tab ? "text-slate-900" : "text-slate-400 hover:text-slate-600",
+            )}
+          >
+            {tab}
+            {activeTab === tab && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-[#1e2a6e]" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab 1 — Approach */}
+      {activeTab === "Approach" && (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {call.meetingNotes.approachSections && call.meetingNotes.approachSections.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              {call.meetingNotes.approachSections.map(({ label, text }) => (
+                <div key={label}>
+                  <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">{label}</p>
+                  <p className="text-[13px] leading-relaxed text-slate-700">{text}</p>
+                </div>
+              ))}
+            </div>
+          ) : approachTurn ? (
+            <p className="text-[13px] leading-relaxed text-slate-700">{approachTurn.text}</p>
+          ) : (
+            <p className="text-[13px] italic text-slate-400">No approach notes available.</p>
+          )}
         </div>
       )}
-      <div>
-        <p className="mb-2 text-[12px] font-semibold text-slate-800">Discussion Topics</p>
-        <ul className="flex flex-col gap-1.5">
-          {call.meetingNotes.discussionTopics.map((t, i) => (
-            <li key={i} className="flex items-start gap-2 text-[13px] text-slate-700">
-              <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-300" />
-              {t}
-            </li>
-          ))}
-        </ul>
-      </div>
+
+      {/* Tab 2 — Questions */}
+      {activeTab === "Questions" && (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {questions.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {questions.map((q, i) => (
+                <div key={i} className="flex gap-2.5">
+                  <span className="mt-1 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 text-[9px] font-bold text-blue-500">{i + 1}</span>
+                  <p className="text-[13px] font-semibold leading-snug text-slate-900">{q.question}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[13px] italic text-slate-400">No questions defined.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1100,72 +1297,42 @@ function avatarColor(name: string) {
 
 function ConversationRecapPanel({ call }: { call: CallData }) {
   const messages = call.conversationRecap.recent;
-  const lastIdx = messages.length - 1;
-  const [expandedIdx, setExpandedIdx] = useState<number>(lastIdx);
 
   return (
     <div className="flex flex-col gap-4">
       {/* Recap summary */}
       <div>
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Recap</p>
+        <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">Recap</p>
         <p className="text-[13px] leading-relaxed text-slate-700">{call.conversationRecap.summary}</p>
       </div>
 
-      {/* Gmail-style thread */}
-      <div className="flex flex-col overflow-hidden rounded-xl border border-slate-100">
+      {/* Open thread — all messages always visible */}
+      <div className="flex flex-col gap-0 overflow-hidden rounded-xl border border-slate-100">
         {messages.map((r, i) => {
-          const isLast = i === lastIdx;
-          const isExpanded = expandedIdx === i;
           const initial = r.person.trim()[0]?.toUpperCase() ?? "?";
           const color = avatarColor(r.person);
-          const firstName = r.person.split(" ")[0];
-
           return (
-            <div key={i} className={cn(!isLast && "border-b border-slate-100")}>
-              {isExpanded ? (
-                /* Expanded message */
-                <div className="px-3.5 py-3">
-                  <div className="flex items-start gap-3">
-                    <div className={cn("mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white", color)}>
-                      {initial}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <GmailIcon className="h-[13px] w-[13px] flex-shrink-0" />
-                        <p className="text-[13px] font-semibold text-slate-900">{r.person}</p>
-                        <span className="ml-auto flex-shrink-0 text-[11px] text-slate-400">{r.timestamp}</span>
-                      </div>
-                      <p className="mt-0.5 text-[10.5px] text-slate-400">{r.email}</p>
-                      <div className="mt-2.5 flex flex-col gap-2 border-t border-slate-100 pt-2.5">
-                        {r.note.split("\n\n").map((para, pi) => (
-                          <p key={pi} className="whitespace-pre-line text-[12.5px] leading-relaxed text-slate-700">
-                            {para}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
+            <div key={i} className={cn("px-3.5 py-3.5", i > 0 && "border-t border-slate-100")}>
+              <div className="flex items-start gap-3">
+                <div className={cn("mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white", color)}>
+                  {initial}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <GmailIcon className="h-[13px] w-[13px] flex-shrink-0" />
+                    <p className="text-[13px] font-semibold text-slate-900">{r.person}</p>
+                    <span className="ml-auto flex-shrink-0 text-[11.5px] text-slate-500">{r.timestamp}</span>
+                  </div>
+                  <p className="mt-0.5 text-[11.5px] text-slate-500">{r.email}</p>
+                  <div className="mt-2.5 flex flex-col gap-2 border-t border-slate-100 pt-2.5">
+                    {r.note.split("\n\n").map((para, pi) => (
+                      <p key={pi} className="whitespace-pre-line text-[13px] leading-relaxed text-slate-700">
+                        {para}
+                      </p>
+                    ))}
                   </div>
                 </div>
-              ) : (
-                /* Collapsed row */
-                <button
-                  onClick={() => setExpandedIdx(i)}
-                  className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-slate-50"
-                >
-                  <div className={cn("flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white", color)}>
-                    {initial}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[13px] font-semibold text-slate-900">{firstName}</p>
-                      <span className="flex-shrink-0 text-[11px] text-slate-400">{r.timestamp}</span>
-                    </div>
-                    <p className="mt-0.5 truncate text-[12px] text-slate-400">
-                      {r.note.split("\n\n")[0].split("\n")[0]}
-                    </p>
-                  </div>
-                </button>
-              )}
+              </div>
             </div>
           );
         })}
@@ -1178,8 +1345,7 @@ function ConversationRecapPanel({ call }: { call: CallData }) {
 function RelatedNewsPanel({ call }: { call: CallData }) {
   return (
     <div className="flex flex-col gap-1">
-      <p className="mb-2 text-[12px] font-semibold text-slate-800">Conversation Starters</p>
-      <ul className="flex flex-col gap-2.5">
+      <ul className="flex flex-col gap-6">
         {call.relatedNews.items.map((item, i) => (
           <li key={i} className="flex items-start gap-2 text-[13px] leading-relaxed text-slate-700">
             <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300" />
@@ -1200,95 +1366,356 @@ function RelatedNewsPanel({ call }: { call: CallData }) {
   );
 }
 
-// ── Internal match card ───────────────────────────────────────────────────────
-function InternalMatchCard({ match }: { match: InternalMatch }) {
+// ── Geo presence card block ───────────────────────────────────────────────────
+function GeoPresenceCardBlock({ card }: { card: GeoPresenceCard }) {
   return (
-    <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/40 px-4 py-4">
-      <div className="mb-3 flex items-center gap-3">
-        <div className={cn("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white", match.color)}>
-          {match.initials}
+    <div className="flex flex-col gap-0 rounded-2xl border border-slate-100 overflow-hidden">
+      {/* Presence header */}
+      <div className="flex flex-col gap-1.5 bg-slate-50/80 px-4 py-3.5">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-slate-400" />
+          <p className="text-[13px] font-semibold text-slate-900">{card.location}</p>
+          {card.distance && (
+            <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10.5px] font-medium text-slate-500">{card.distance}</span>
+          )}
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-bold text-slate-900">{match.name}</p>
-          <p className="text-[11.5px] text-slate-500">{match.role}</p>
-        </div>
-        <span className="flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-[10.5px] font-semibold text-violet-700">
-          <MapPin className="h-3 w-3" />
-          {match.location}
-        </span>
+        <p className="text-[11.5px] text-slate-500 pl-5">{card.projectLine}</p>
+        <p className="text-[11px] text-slate-400 pl-5">{card.clientDescriptor}</p>
       </div>
-      <p className="mb-2 text-[12.5px] leading-relaxed text-slate-700">{match.relevance}</p>
-      {match.pastContext && (
-        <p className="mb-3 text-[11.5px] italic text-slate-400">{match.pastContext}</p>
-      )}
-      <div className="flex gap-2">
-        <button className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-violet-200 bg-white py-1.5 text-[11.5px] font-medium text-violet-700 transition-colors hover:bg-violet-50">
-          <Phone className="h-3 w-3" />
-          Schedule intro
-        </button>
-        <button className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-violet-200 bg-white py-1.5 text-[11.5px] font-medium text-violet-700 transition-colors hover:bg-violet-50">
-          <Mail className="h-3 w-3" />
-          Intro email
-        </button>
+
+      {/* Project card */}
+      <div className="border-t border-slate-100 bg-white px-4 py-3.5">
+        <p className="mb-3 text-[12.5px] font-semibold text-slate-900">PE Advisory Workflow</p>
+        <div className="flex flex-col gap-3">
+          {[
+            { label: "Problem",          text: card.project.problem      },
+            { label: "What we built",    text: card.project.whatWeBuilt  },
+            { label: "Outcome",          text: card.project.outcome      },
+            { label: "Why this matters", text: card.project.whyItMatters },
+          ].map(({ label, text }) => (
+            <div key={label} className="flex flex-col gap-1">
+              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">{label}</span>
+              <p className="text-[11.5px] leading-relaxed text-slate-500">{text}</p>
+            </div>
+          ))}
+        </div>
+        <a
+          href={card.project.href}
+          className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[11.5px] font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-blue-50 hover:text-blue-700 hover:ring-blue-200"
+        >
+          View case study
+          <ArrowUpRight className="h-3 w-3" />
+        </a>
       </div>
     </div>
   );
+}
+
+// ── Compose email modal ───────────────────────────────────────────────────────
+function ComposeEmailModal({ match, onClose }: { match: InternalMatch; onClose: () => void }) {
+  const [subject, setSubject] = useState(match.emailSubject ?? "");
+  const [body, setBody] = useState(match.emailBody ?? "");
+  const [sent, setSent] = useState(false);
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailConnecting, setGmailConnecting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  function handleConnectGmail() {
+    setGmailConnecting(true);
+    setTimeout(() => {
+      setGmailConnecting(false);
+      setGmailConnected(true);
+    }, 1200);
+  }
+
+  function handleSend() {
+    setSent(true);
+    setTimeout(() => onClose(), 2000);
+  }
+
+  if (!mounted) return null;
+
+  const modal = (
+    <>
+      <div className="fixed inset-0 z-[9999] bg-black/30 backdrop-blur-[3px]" onClick={onClose} />
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
+        <div className="pointer-events-auto w-full max-w-lg mx-4 rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden">
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <p className="text-[15px] font-bold text-slate-900">New Message</p>
+            <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Gmail connect banner */}
+          {!gmailConnected ? (
+            <div className="flex items-center justify-between gap-3 bg-slate-50 px-5 py-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                {/* Gmail G logo */}
+                <svg viewBox="0 0 24 24" className="h-4 w-4 flex-shrink-0" fill="none">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <p className="text-[12.5px] text-slate-600">
+                  Connect Gmail to send directly from your inbox
+                </p>
+              </div>
+              <button
+                onClick={handleConnectGmail}
+                disabled={gmailConnecting}
+                className="flex-shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11.5px] font-semibold text-slate-700 transition-all hover:border-blue-300 hover:text-blue-700 disabled:opacity-60"
+              >
+                {gmailConnecting ? "Connecting…" : "Connect Gmail"}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 bg-emerald-50 px-5 py-2.5 border-b border-emerald-100">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 flex-shrink-0" fill="none">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              <p className="text-[12px] font-semibold text-emerald-700">Gmail connected</p>
+              <span className="text-[11px] text-emerald-500">· hassan.malik@tkxel.com</span>
+            </div>
+          )}
+
+          {/* Fields */}
+          <div className="flex flex-col divide-y divide-slate-100">
+            {/* To */}
+            <div className="flex items-center gap-3 px-5 py-3">
+              <span className="w-14 flex-shrink-0 text-[11px] font-semibold uppercase tracking-widest text-slate-400">To</span>
+              <p className="text-[13px] text-slate-500">{match.emailTo}</p>
+            </div>
+            {/* Subject */}
+            <div className="flex items-center gap-3 px-5 py-3">
+              <span className="w-14 flex-shrink-0 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Subject</span>
+              <input
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+                className="flex-1 text-[13px] text-slate-900 outline-none placeholder:text-slate-300"
+              />
+            </div>
+            {/* Body */}
+            <div className="px-5 py-4">
+              <textarea
+                value={body}
+                onChange={e => setBody(e.target.value)}
+                rows={10}
+                className="w-full resize-none text-[13px] leading-relaxed text-slate-700 outline-none placeholder:text-slate-300"
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100">
+            <p className="text-[11.5px] italic text-slate-400">✨ AI drafted · Edit freely before sending</p>
+            <button
+              onClick={handleSend}
+              disabled={sent}
+              className={cn(
+                "flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold transition-all",
+                sent
+                  ? "bg-emerald-50 text-emerald-700 cursor-default"
+                  : "bg-slate-900 text-white hover:bg-slate-800",
+              )}
+            >
+              {sent ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Sent to {match.name.split(" ")[0]} {match.name.split(" ")[1]}
+                </>
+              ) : (
+                <>
+                  <Send className="h-3.5 w-3.5" />
+                  Send
+                </>
+              )}
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </>
+  );
+
+  return createPortal(modal, document.body);
 }
 
 // ── Related work panel ────────────────────────────────────────────────────────
+const RELATED_WORK_TABS = ["Relevant Projects", "Geographical Presence", "Suggested Presales Expert"] as const;
+type RelatedWorkTab = typeof RELATED_WORK_TABS[number];
+
 function RelatedWorkPanel({ call }: { call: CallData }) {
+  const [activeTab, setActiveTab] = useState<RelatedWorkTab>("Relevant Projects");
+  const [showCompose, setShowCompose] = useState(false);
+
   return (
-    <div className="flex flex-col gap-0">
-      {call.internalMatch && <InternalMatchCard match={call.internalMatch} />}
-      <div className="grid grid-cols-2 gap-3">
-        {call.relatedWork.map((w, i) => (
-          <div
-            key={i}
-            className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3.5"
+    <div className="flex flex-col gap-0 h-full min-h-0">
+      {/* Tab bar — matches drawer style */}
+      <div className="-mx-4 flex flex-shrink-0 border-b border-slate-200 px-4 mb-4">
+        {RELATED_WORK_TABS.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              "relative px-3 pb-2.5 pt-0.5 text-[12px] font-medium transition-colors whitespace-nowrap",
+              activeTab === tab ? "text-slate-900" : "text-slate-400 hover:text-slate-600",
+            )}
           >
-            <p className="text-[12.5px] font-semibold text-slate-800">{w.label}</p>
-            {w.problem && (
-              <div className="flex flex-col gap-1">
-                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Problem</span>
-                <p className="text-[12px] leading-relaxed text-slate-500">{w.problem}</p>
-              </div>
+            {tab}
+            {activeTab === tab && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-[#1e2a6e]" />
             )}
-            {w.solution && (
-              <div className="flex flex-col gap-1">
-                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">How we solved it</span>
-                <p className="text-[12px] leading-relaxed text-slate-600">{w.solution}</p>
-              </div>
-            )}
-            <a
-              href={w.href}
-              className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[11.5px] font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-blue-50 hover:text-blue-700 hover:ring-blue-200"
-            >
-              View case study
-              <ArrowUpRight className="h-3 w-3" />
-            </a>
-          </div>
+          </button>
         ))}
       </div>
+
+      {/* Tab 1 — Relevant Projects */}
+      {activeTab === "Relevant Projects" && (
+        <div className="flex flex-col gap-3 overflow-y-auto flex-1 min-h-0">
+          <div className="grid grid-cols-2 gap-3">
+            {call.relatedWork.map((w, i) => (
+              <div
+                key={i}
+                className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3.5"
+              >
+                <p className="text-[13px] font-semibold text-slate-900">{w.label}</p>
+                {w.problem && (
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Problem</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {w.problem.split(/(?<=[.!?])\s+/).filter(Boolean).map((s, j) => (
+                        <span key={j} className="rounded-2xl bg-slate-50 px-2.5 py-1 text-[11px] leading-snug text-slate-600">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {w.solution && (
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">How we solved it</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {w.solution.split(/(?<=[.!?])\s+/).filter(Boolean).map((s, j) => (
+                        <span key={j} className="rounded-2xl bg-slate-50 px-2.5 py-1 text-[11px] leading-snug text-slate-600">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <a
+                  href={w.href}
+                  className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[11.5px] font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-blue-50 hover:text-blue-700 hover:ring-blue-200"
+                >
+                  View case study
+                  <ArrowUpRight className="h-3 w-3" />
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2 — Geographical Presence */}
+      {activeTab === "Geographical Presence" && (
+        <div className="flex flex-col gap-4 overflow-y-auto flex-1 min-h-0">
+          {call.geoPresence && call.geoPresence.length > 0 ? (
+            call.geoPresence.map((card, idx) => (
+              <GeoPresenceCardBlock key={idx} card={card} />
+            ))
+          ) : (
+            <p className="text-[13px] italic text-slate-400">No geographical presence data available for this call.</p>
+          )}
+        </div>
+      )}
+
+      {/* Tab 3 — Suggested Presales Expert */}
+      {activeTab === "Suggested Presales Expert" && call.internalMatch && (
+        <div className="flex flex-col gap-4 overflow-y-auto flex-1 min-h-0">
+          {/* Person card */}
+          <div className="flex items-center gap-3">
+            <div className={cn("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white", call.internalMatch.color)}>
+              {call.internalMatch.initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-slate-900">{call.internalMatch.name}</p>
+              <p className="text-[11.5px] text-slate-500">{call.internalMatch.role}</p>
+            </div>
+          </div>
+
+          {/* Why [first name] */}
+          {call.internalMatch.reasoning && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">
+                Why {call.internalMatch.name.split(" ")[0]}
+              </span>
+              <p className="text-[13px] leading-relaxed text-slate-600">{call.internalMatch.reasoning}</p>
+            </div>
+          )}
+
+
+          {/* Context note — AI box */}
+          {call.internalMatch.contextNote && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50/50 px-3.5 py-3">
+              <Sparkles className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-indigo-400" />
+              <p className="text-[12px] italic leading-relaxed text-indigo-700">{call.internalMatch.contextNote}</p>
+            </div>
+          )}
+
+          {/* Action — matches Mark as done style */}
+          <button
+            onClick={() => setShowCompose(true)}
+            className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12.5px] font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95"
+          >
+            <Mail className="h-3.5 w-3.5 text-slate-400" />
+            Draft intro email
+          </button>
+        </div>
+      )}
+
+      {/* No internalMatch fallback for Tab 3 */}
+      {activeTab === "Suggested Presales Expert" && !call.internalMatch && (
+        <p className="text-[13px] italic text-slate-400">No presales expert match available for this call.</p>
+      )}
+
+      {/* Compose modal */}
+      {showCompose && call.internalMatch && (
+        <ComposeEmailModal match={call.internalMatch} onClose={() => setShowCompose(false)} />
+      )}
     </div>
   );
 }
 
-// ── Tech Intelligence panel ───────────────────────────────────────────────────
+// ── About the client (stack / vendors / signals) ───────────────────────────────
 function TechIntelligencePanel({ call }: { call: CallData }) {
   const ti = call.techIntelligence;
   if (!ti) {
-    return <p className="text-[13px] text-slate-400 italic">No tech intelligence data available for this call.</p>;
+    return <p className="text-[13px] text-slate-400 italic">No client technology insights available for this call.</p>;
   }
+  const synthesisBrief = ti.synthesis.split(/(?<=[.!?])\s+/)[0];
   return (
     <div className="flex flex-col gap-4">
+      {/* AI synthesis — top summary */}
+      <div className="flex items-start gap-2">
+        <Sparkles className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-indigo-400" />
+        <p className="text-[13px] leading-relaxed text-slate-700">{synthesisBrief}</p>
+      </div>
+
+      <div className="h-px bg-slate-100" />
+
       {/* Vendors table */}
       <div>
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Detected vendors</p>
+        <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">Existing vendors</p>
         <div className="overflow-hidden rounded-xl border border-slate-100">
           {ti.vendors.map((v, i) => (
             <div key={i} className={cn("px-4 py-3", i > 0 && "border-t border-slate-100")}>
               <div className="flex items-center gap-2 mb-1">
-                <p className="text-[12.5px] font-semibold text-slate-900">{v.name}</p>
+                <p className="text-[13px] font-semibold text-slate-900">{v.name}</p>
                 <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600">{v.category}</span>
               </div>
               <p className="text-[11.5px] leading-snug text-slate-500">{v.signal}</p>
@@ -1298,104 +1725,21 @@ function TechIntelligencePanel({ call }: { call: CallData }) {
       </div>
 
       {/* Hiring signals */}
-      <div>
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Hiring signals</p>
-        <ul className="flex flex-col gap-2">
-          {ti.hiringSignals.map((signal, i) => (
-            <li key={i} className="flex items-start gap-2 text-[12.5px] leading-snug text-slate-700">
-              <TrendingUp className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-indigo-400" />
-              {signal}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* AI synthesis */}
-      <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3">
-        <div className="mb-1.5 flex items-center gap-1.5">
-          <Sparkles className="h-3 w-3 text-indigo-500" />
-          <p className="text-[10.5px] font-semibold text-indigo-600">AI read</p>
+      {ti.hiringSignals && ti.hiringSignals.length > 0 && (
+        <div>
+          <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">Hiring signals</p>
+          <div className="flex flex-col gap-2">
+            {ti.hiringSignals.map((signal, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <TrendingUp className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-indigo-400" />
+                <p className="text-[12px] leading-snug text-slate-600">{signal}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        <p className="text-[12.5px] leading-relaxed text-slate-700">{ti.synthesis}</p>
-      </div>
+      )}
+
     </div>
-  );
-}
-
-// ── Prepared modal ────────────────────────────────────────────────────────────
-const NOTIFY_CHAIN = [
-  { role: "AE",         name: "Hassan Malik"   },
-  { role: "Director",   name: "Sarah Chen"     },
-  { role: "VP of Sales",name: "James Liu"      },
-  { role: "CEO",        name: "Nadia Kowalski" },
-];
-
-function PreparedModal({ call, notifyStep, setNotifyStep, onClose }: {
-  call: CallData;
-  notifyStep: number;
-  setNotifyStep: (n: number) => void;
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    if (notifyStep < NOTIFY_CHAIN.length - 1) {
-      const t = setTimeout(() => setNotifyStep(notifyStep + 1), 800);
-      return () => clearTimeout(t);
-    }
-  }, [notifyStep, setNotifyStep]);
-
-  return (
-    <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-sm mx-4 rounded-2xl bg-white p-8 shadow-2xl">
-          {/* Header */}
-          <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50">
-              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-            </div>
-            <div>
-              <p className="text-[15px] font-bold text-slate-900">Prep marked as ready</p>
-              <p className="text-[12px] text-slate-400">{call.company} · {call.person}</p>
-            </div>
-          </div>
-
-          {/* Chain */}
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-slate-400">Notification chain</p>
-          <div className="flex flex-col gap-3">
-            {NOTIFY_CHAIN.map((node, i) => {
-              const isDone = i <= notifyStep;
-              const isActive = i === notifyStep;
-              return (
-                <div key={i} className="flex items-center gap-3">
-                  <div className={cn(
-                    "h-2.5 w-2.5 flex-shrink-0 rounded-full transition-colors duration-500",
-                    isDone ? "bg-emerald-400" : "bg-slate-200",
-                    isActive && "animate-pulse bg-amber-400",
-                  )} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-slate-900">{node.name}</p>
-                    <p className="text-[11px] text-slate-400">{node.role}</p>
-                  </div>
-                  <span className={cn(
-                    "rounded-full px-2 py-0.5 text-[10.5px] font-semibold",
-                    isDone && !isActive ? "bg-emerald-50 text-emerald-700" : isActive ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-400",
-                  )}>
-                    {isDone && !isActive ? "Sent" : isActive ? "Sending…" : "Queued"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          <button
-            onClick={onClose}
-            className="mt-7 w-full rounded-xl bg-slate-900 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-slate-800"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </>
   );
 }
 
@@ -1406,7 +1750,7 @@ const DRAWER_CONFIG: Record<string, { icon: React.ElementType; title: string; ac
   meeting:      { icon: Flag,          title: "Strategy",             accent: "text-blue-500"    },
   recap:        { icon: MessageCircle, title: "Conversation Recap",   accent: "text-emerald-500" },
   work:         { icon: BookOpen,      title: "Related Work",         accent: "text-teal-500"    },
-  news:         { icon: Newspaper,     title: "Conversation Openers", accent: "text-amber-500"   },
+  news:         { icon: Newspaper,     title: "Conversation opener", accent: "text-amber-500"   },
 };
 
 // ── Shared drawer primitives ──────────────────────────────────────────────────
@@ -1966,7 +2310,7 @@ function DrawerNews({ call }: { call: CallData }) {
               <div className="flex flex-col gap-5 mt-1">
                 {rn.items.map((item, i) => (
                   <div key={i}>
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{item.headline.split("—")[0].trim()}</p>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{item.headline}</p>
                     <div className="rounded-lg border-l-2 border-blue-300 bg-blue-50/60 px-3 py-2.5">
                       <p className="text-[12.5px] italic leading-relaxed text-slate-600">{item.howToUse}</p>
                     </div>
@@ -2008,7 +2352,7 @@ function PanelDrawer({ panelId, call, onClose }: { panelId: string; call: CallDa
     setTypedReply("");
     setDrawerThinking(true);
     setTimeout(() => {
-      const answer = `Based on the ${cfg.title.toLowerCase()} for ${call.company}: ${q.endsWith("?") ? "" : "regarding your question — "}this is specific prep context generated from what we know about ${call.person} and their situation. The agent would surface the most relevant detail from this section to answer your question directly.`;
+      const answer = `Based on the ${cfg.title.toLowerCase()} for ${call.company}: ${q.endsWith("?") ? "" : "regarding your question, "}this is specific prep context generated from what we know about ${call.person} and their situation. The agent would surface the most relevant detail from this section to answer your question directly.`;
       setDrawerThinking(false);
       setDrawerReply(answer);
     }, 1800);
@@ -2124,9 +2468,16 @@ function PanelDrawer({ panelId, call, onClose }: { panelId: string; call: CallDa
 
 // ── Agent response card ───────────────────────────────────────────────────────
 // Looks identical to PanelCard. Shows skeleton while thinking, then typewriter.
-function AgentResponseCard({ card }: { card: AgentCard }) {
+function AgentResponseCard({
+  card,
+  onAIFeedbackSubmitted,
+}: {
+  card: AgentCard;
+  onAIFeedbackSubmitted?: () => void;
+}) {
   const [typedText, setTypedText] = useState("");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const feedbackTitle = card.title ?? "Insphere Agent";
 
   useEffect(() => {
     if (!card.thinking && card.answer) {
@@ -2172,8 +2523,15 @@ function AgentResponseCard({ card }: { card: AgentCard }) {
         <span className="flex-1 text-[14px] font-semibold text-slate-900">
           {card.thinking ? "Thinking…" : (card.title ?? "Insphere Agent")}
         </span>
-        <div className="drag-handle flex h-6 w-6 cursor-grab items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-500 active:cursor-grabbing print:hidden">
-          <GripVertical className="h-3.5 w-3.5" />
+        <div className="flex flex-shrink-0 items-center gap-0.5 print:hidden">
+          <div className="drag-handle flex h-6 w-6 cursor-grab items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-500 active:cursor-grabbing">
+            <GripVertical className="h-3.5 w-3.5" />
+          </div>
+          <PanelAIFeedbackMenu
+            widgetId={card.id}
+            widgetTitle={feedbackTitle}
+            onSubmitted={onAIFeedbackSubmitted}
+          />
         </div>
       </div>
 
@@ -2315,8 +2673,8 @@ function SendModal({ email, message, callPerson, onEmailChange, onMessageChange,
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function Toast({ message }: { message: string }) {
   return (
-    <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 animate-[fadeUp_0.25s_ease_both] rounded-full border border-slate-200 bg-slate-900 px-4 py-2.5 shadow-xl">
-      <p className="text-[13px] font-medium text-white">{message}</p>
+    <div className="fixed bottom-6 left-1/2 z-50 max-w-[min(90vw,22rem)] -translate-x-1/2 animate-[fadeUp_0.25s_ease_both] rounded-2xl border border-slate-200 bg-slate-900 px-4 py-2.5 text-center shadow-xl">
+      <p className="text-[13px] font-medium leading-snug text-white">{message}</p>
     </div>
   );
 }

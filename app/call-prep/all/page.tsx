@@ -67,27 +67,27 @@ const CALLS: CallCard[] = [
     turns: [
       {
         label: "The Verdict",
-        text: "Andy Harbut, Co-Founder at NewCo Risk. Insurance and risk advisory for PE firms — 20 years in the space, over 1,000 deals. He is an operator, not a thought leader. He will not be moved by credentials. He will be moved by whether you understand his world. Medium priority call — he has authority but the firm is small. Ask me anything or I will keep going.",
+        text: "Andy Harbut, Co-Founder at NewCo Risk. Insurance and risk advisory for PE firms, 20 years in the space, over 1,000 deals. He is an operator, not a thought leader. He will not be moved by credentials. He will be moved by whether you understand his world. Medium priority call, he has authority but the firm is small. Ask me anything or I will keep going.",
       },
       {
         label: "The Company Read",
-        text: "NewCo Risk serves PE firms during acquisitions. Their job is identifying insurance and risk exposure before a deal closes. Their clients are PE partners under enormous time pressure — they want certainty, not creativity. Six employees, five million in revenue. This is a boutique. They are not buying a platform. They are buying something that makes their small team look bigger and smarter. Frame Tkxel as a force multiplier.",
+        text: "NewCo Risk serves PE firms during acquisitions. Their job is identifying insurance and risk exposure before a deal closes. Their clients are PE partners under enormous time pressure, they want certainty, not creativity. Six employees, five million in revenue. This is a boutique. They are not buying a platform. They are buying something that makes their small team look bigger and smarter. Frame Tkxel as a force multiplier.",
       },
       {
         label: "The Relevance Bridge",
-        text: "Here is where we are genuinely relevant. We built a document processing pipeline for an insurance advisory firm that cut their due diligence report time from three days to four hours. That story lands for Andy — he lives in that problem. Lead with it as a question, not a case study: ask him what the bottleneck is that costs him the most time in a due diligence cycle. Let him describe the problem, then mirror it back with what we built.",
+        text: "Here is where we are genuinely relevant. We built a document processing pipeline for an insurance advisory firm that cut their due diligence report time from three days to four hours. That story lands for Andy, he lives in that problem. Lead with it as a question, not a case study: ask him what the bottleneck is that costs him the most time in a due diligence cycle. Let him describe the problem, then mirror it back with what we built.",
       },
       {
         label: "The Approach",
-        text: "Open without pitching. Andy has twenty years in this industry — he will lose respect for you the moment you start selling. Open with a genuine observation about his space. In the middle, let him talk — your job in the first half is to make him feel heard, not to demonstrate Tkxel. Avoid referencing company size. Close directly: ask for the next step, do not wait for him to offer it. He is an operator. He respects directness.",
+        text: "Open without pitching. Andy has twenty years in this industry, he will lose respect for you the moment you start selling. Open with a genuine observation about his space. In the middle, let him talk, your job in the first half is to make him feel heard, not to demonstrate Tkxel. Avoid referencing company size. Close directly: ask for the next step, do not wait for him to offer it. He is an operator. He respects directness.",
       },
       {
         label: "Hooks",
-        text: "Andy left a President-level role at Symphony Risk Solutions to start NewCo. That is a meaningful choice worth acknowledging if it comes up naturally — not as a compliment, but as a real question: what made you decide to go independent? His background is in high-stakes, high-trust environments. Match his register. Be specific, be prepared, do not wing it. Precision will build more credibility with him than personality.",
+        text: "Andy left a President-level role at Symphony Risk Solutions to start NewCo. That is a meaningful choice worth acknowledging if it comes up naturally, not as a compliment, but as a real question: what made you decide to go independent? His background is in high-stakes, high-trust environments. Match his register. Be specific, be prepared, do not wing it. Precision will build more credibility with him than personality.",
       },
       {
         label: "Open Questions",
-        text: "Here is what I do not know and what you should try to find out on the call: what tools they currently use for risk analysis; whether they have worked with a technology partner before; who else will be in the room; and what triggered this conversation — did they come to us or did we reach out? That last one matters most. If they came to us, Andy already has a problem in mind. If we reached out, you need to surface the problem before you can solve it.",
+        text: "Here is what I do not know and what you should try to find out on the call: what tools they currently use for risk analysis; whether they have worked with a technology partner before; who else will be in the room; and what triggered this conversation, did they come to us or did we reach out? That last one matters most. If they came to us, Andy already has a problem in mind. If we reached out, you need to surface the problem before you can solve it.",
       },
     ],
   },
@@ -107,23 +107,23 @@ const CALLS: CallCard[] = [
     turns: [
       {
         label: "The Verdict",
-        text: "Sarah Chen, VP of Operations at Avant Garde Solutions Ltd. Mid-size logistics and operations consultancy — scaling fast, operationally stretched. She is pragmatic and detail-oriented. She will need to see a direct line from what we do to how her team operates better. Lead with outcomes, not capabilities. This is a strong fit call. Do not undersell it.",
+        text: "Sarah Chen, VP of Operations at Avant Garde Solutions Ltd. Mid-size logistics and operations consultancy, scaling fast, operationally stretched. She is pragmatic and detail-oriented. She will need to see a direct line from what we do to how her team operates better. Lead with outcomes, not capabilities. This is a strong fit call. Do not undersell it.",
       },
       {
         label: "The Company Read",
-        text: "Avant Garde serves enterprise clients across logistics, retail, and manufacturing. They are growing faster than their internal processes can handle — that tension is exactly where we play. Three hundred employees, revenue in the $40M range. Decision-making is distributed; Sarah has influence but she is not the only sign-off. Expect a second conversation with her CTO.",
+        text: "Avant Garde serves enterprise clients across logistics, retail, and manufacturing. They are growing faster than their internal processes can handle, that tension is exactly where we play. Three hundred employees, revenue in the $40M range. Decision-making is distributed; Sarah has influence but she is not the only sign-off. Expect a second conversation with her CTO.",
       },
       {
         label: "The Relevance Bridge",
-        text: "We built a document processing pipeline for an insurance advisory firm that cut their due diligence report time from three days to four hours. Position this not as a technology project but as an operational capacity gain — Avant Garde's language is throughput and headcount efficiency, not infrastructure. Ask her what the highest-volume manual process in her team is. That is your entry point.",
+        text: "We built a document processing pipeline for an insurance advisory firm that cut their due diligence report time from three days to four hours. Position this not as a technology project but as an operational capacity gain, Avant Garde's language is throughput and headcount efficiency, not infrastructure. Ask her what the highest-volume manual process in her team is. That is your entry point.",
       },
       {
         label: "The Approach",
-        text: "Open with the operational pressure framing — acknowledge that fast-growing operations teams are solving problems that did not exist six months ago. Let her confirm or redirect. Do not pitch until she has described her world. In the middle, bring in the proof point. Close by proposing a structured next step: a 30-minute technical scoping call with her and the CTO. Make it easy for her to say yes.",
+        text: "Open with the operational pressure framing, acknowledge that fast-growing operations teams are solving problems that did not exist six months ago. Let her confirm or redirect. Do not pitch until she has described her world. In the middle, bring in the proof point. Close by proposing a structured next step: a 30-minute technical scoping call with her and the CTO. Make it easy for her to say yes.",
       },
       {
         label: "Hooks",
-        text: "Sarah has been at Avant Garde for three years and moved from a senior analyst role to VP in eighteen months. That is an unusually fast track — she is driven and results-oriented. She will respect efficiency in the conversation itself. Do not over-explain. She is also active on LinkedIn around operational excellence — reference that framing if it comes up.",
+        text: "Sarah has been at Avant Garde for three years and moved from a senior analyst role to VP in eighteen months. That is an unusually fast track, she is driven and results-oriented. She will respect efficiency in the conversation itself. Do not over-explain. She is also active on LinkedIn around operational excellence, reference that framing if it comes up.",
       },
       {
         label: "Open Questions",
@@ -147,27 +147,27 @@ const CALLS: CallCard[] = [
     turns: [
       {
         label: "The Verdict",
-        text: "Sidra Masood, Director at Amherst. Real estate investment and advisory firm — institutional clients, long decision cycles. She is analytical and process-driven. Credibility here comes from preparation and precision, not warmth. I have a gap: I do not yet know who else will be on this call. Answer this before you open or you risk pitching at the wrong level.",
+        text: "Sidra Masood, Director at Amherst. Real estate investment and advisory firm, institutional clients, long decision cycles. She is analytical and process-driven. Credibility here comes from preparation and precision, not warmth. I have a gap: I do not yet know who else will be on this call. Answer this before you open or you risk pitching at the wrong level.",
       },
       {
         label: "The Company Read",
-        text: "Amherst operates across real estate investment, property technology, and advisory services. Roughly 400 employees. They are navigating a challenging market cycle — their clients are under pressure and that pressure flows down to the advisory layer. Technology investment here tends to be conservative and ROI-driven. The buying cycle will be long. This call is about qualification as much as anything else.",
+        text: "Amherst operates across real estate investment, property technology, and advisory services. Roughly 400 employees. They are navigating a challenging market cycle, their clients are under pressure and that pressure flows down to the advisory layer. Technology investment here tends to be conservative and ROI-driven. The buying cycle will be long. This call is about qualification as much as anything else.",
       },
       {
         label: "The Relevance Bridge",
-        text: "Our most transferable proof point is the data aggregation and reporting work we did for a property advisory firm — reduced manual reporting time by 60% and gave their analysts 90 minutes a day back. Sidra's world runs on analysis and reporting. Ask her what the most time-consuming reporting process her team runs is. If she pauses, you have your entry point.",
+        text: "Our most transferable proof point is the data aggregation and reporting work we did for a property advisory firm, reduced manual reporting time by 60% and gave their analysts 90 minutes a day back. Sidra's world runs on analysis and reporting. Ask her what the most time-consuming reporting process her team runs is. If she pauses, you have your entry point.",
       },
       {
         label: "The Approach",
-        text: "Open formally. Sidra will expect structure. Introduce the call with an agenda, even a simple one — it signals that you have prepared. In the middle, use precise questions rather than open-ended ones. She will be more comfortable with specifics. Avoid vague language like 'solutions' and 'partnerships.' Close by summarising what you heard and proposing a concrete next step with a timeline.",
+        text: "Open formally. Sidra will expect structure. Introduce the call with an agenda, even a simple one, it signals that you have prepared. In the middle, use precise questions rather than open-ended ones. She will be more comfortable with specifics. Avoid vague language like 'solutions' and 'partnerships.' Close by summarising what you heard and proposing a concrete next step with a timeline.",
       },
       {
         label: "Hooks",
-        text: "Sidra has a finance background — she moved into real estate from investment banking. That means she thinks in terms of ROI, payback periods, and risk. Frame every capability in those terms if you can. She is measured and deliberate in how she speaks. Match that register. Do not rush the conversation.",
+        text: "Sidra has a finance background, she moved into real estate from investment banking. That means she thinks in terms of ROI, payback periods, and risk. Frame every capability in those terms if you can. She is measured and deliberate in how she speaks. Match that register. Do not rush the conversation.",
       },
       {
         label: "Open Questions",
-        text: "The critical gap: who else is attending this call. I need you to find that out in the first two minutes — ask Sidra directly. The other gaps: what prompted this conversation, what their current technology stack looks like, and whether they have an active budget or this is exploratory. The last point determines how hard to push on next steps.",
+        text: "The critical gap: who else is attending this call. I need you to find that out in the first two minutes, ask Sidra directly. The other gaps: what prompted this conversation, what their current technology stack looks like, and whether they have an active budget or this is exploratory. The last point determines how hard to push on next steps.",
       },
     ],
   },
@@ -177,12 +177,12 @@ const QA_BANK = [
   {
     keywords: ["avoid", "not say", "should not", "shouldnt", "warn"],
     response:
-      "The single thing not to say is anything that positions Tkxel as a vendor. The moment you reference deliverables, timelines, or pricing unprompted, you break the frame. Keep the conversation in their world — their problems, their constraints — until they ask you to shift it.",
+      "The single thing not to say is anything that positions Tkxel as a vendor. The moment you reference deliverables, timelines, or pricing unprompted, you break the frame. Keep the conversation in their world, their problems, their constraints, until they ask you to shift it.",
   },
   {
     keywords: ["proof point", "project", "built", "case study", "reference", "done"],
     response:
-      "The strongest proof point is the document processing pipeline we built for an insurance advisory firm — three-day due diligence reports down to four hours. Use it as a question, not a story: 'What is the part of your process that costs you the most time?' Let them describe it. Then mirror it back.",
+      "The strongest proof point is the document processing pipeline we built for an insurance advisory firm, three-day due diligence reports down to four hours. Use it as a question, not a story: 'What is the part of your process that costs you the most time?' Let them describe it. Then mirror it back.",
   },
   {
     keywords: ["competitor", "competition", "alternative"],
@@ -192,7 +192,7 @@ const QA_BANK = [
   {
     keywords: ["question", "discovery", "ask", "find out"],
     response:
-      "Four questions to prioritise: (1) What does your current process look like end-to-end? (2) Where does the most time get lost? (3) Have you worked with a technology partner before? (4) What triggered this conversation — inbound or outreach? That last one tells you where they are in the buying process.",
+      "Four questions to prioritise: (1) What does your current process look like end-to-end? (2) Where does the most time get lost? (3) Have you worked with a technology partner before? (4) What triggered this conversation, inbound or outreach? That last one tells you where they are in the buying process.",
   },
   {
     keywords: ["close", "next step", "end", "follow up", "wrap"],
@@ -397,7 +397,7 @@ export default function AllCallsPage() {
 
           {/* Search + filters row */}
           <div className="mt-4 flex items-center gap-3">
-            {/* Search — pill shape */}
+            {/* Search, pill shape */}
             <div className="flex w-72 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
               <Search className="h-3.5 w-3.5 flex-shrink-0 text-slate-400" />
               <input
@@ -653,7 +653,7 @@ function BriefingDrawer({
   const handleAskQuestion = () => {
     setMidBriefingPause(true);
     setInputLocked(false);
-    setInputHint("Ask a question — briefing continues after");
+    setInputHint("Ask a question, briefing continues after");
     setTimeout(() => {
       (document.querySelector("#briefing-input-all") as HTMLInputElement | null)?.focus();
     }, 50);
@@ -888,7 +888,7 @@ function AgentTurn({
             Insphere Agent
           </span>
           <span className="ml-2 text-[10.5px] font-semibold uppercase tracking-widest text-slate-400">
-            Turn {index + 1} — {label}
+            Turn {index + 1}, {label}
           </span>
         </div>
       </div>
@@ -913,7 +913,7 @@ function AgentTurn({
           {isLast && complete ? (
             <div className="flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-[12.5px] font-medium text-white shadow-sm">
               <Check className="h-3.5 w-3.5" />
-              Briefing complete — ask me anything.
+              Briefing complete, ask me anything.
             </div>
           ) : (
             <>

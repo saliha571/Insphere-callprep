@@ -212,7 +212,7 @@ export default function CallPrepPage() {
               <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-slate-400 w-full">
                 <CheckCircle2 className="h-8 w-8 text-emerald-400" />
                 <p className="text-[14px] font-medium text-slate-600">All caught up!</p>
-                <p className="text-[13px]">No pending calls — all marked as done.</p>
+                <p className="text-[13px]">No pending calls. All marked as done.</p>
               </div>
             ) : visibleCalls.map((c) => (
               <PrepCard key={c.id} card={c} />
