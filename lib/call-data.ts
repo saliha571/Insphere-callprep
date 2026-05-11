@@ -7,6 +7,8 @@ export interface Stakeholder {
   role: string;
   initials: string;
   color: string;
+  /** Square headshot — Figma 2040:32928 profile tile (40×40, rounded 10px). */
+  photoUrl?: string;
   linkedin?: string;
   confirmed?: boolean;
   isDecisionMaker?: boolean;
@@ -286,7 +288,9 @@ export const CALLS: CallData[] = [
         role: "Co-Founder",
         initials: "AH",
         color: "bg-blue-600",
-        linkedin: "#",
+        photoUrl:
+          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=160&h=160&q=80",
+        linkedin: "https://www.linkedin.com/in/andyharbut",
         confirmed: true,
         isDecisionMaker: true,
         decisionMakerReason: "Budget holder and final decision-maker; co-founder with full authority over technology investment",
@@ -313,6 +317,7 @@ export const CALLS: CallData[] = [
         role: "Head of Operations",
         initials: "RT",
         color: "bg-violet-500",
+        linkedin: "https://www.linkedin.com/in/racheltorres",
         confirmed: true,
         isDecisionMaker: false,
         technicalLevel: "Semi Technical",

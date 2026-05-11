@@ -16,7 +16,12 @@ import { AppSidebar } from "@/components/call-prep/AppSidebar";
 import { CallPrepBreadcrumbs } from "@/components/call-prep/CallPrepBreadcrumbs";
 import { cn } from "@/lib/utils";
 import { CALLS, QA_BANK, type CallData } from "@/lib/call-data";
-import type { GeoPresenceCard, InternalMatch, RelatedWorkItem } from "@/lib/call-data";
+import type {
+  GeoPresenceCard,
+  InternalMatch,
+  RelatedWorkItem,
+  Stakeholder,
+} from "@/lib/call-data";
 import { getDoneCalls, markCallDone, unmarkCallDone } from "@/lib/done-calls";
 import {
   AlertTriangle,
@@ -127,7 +132,7 @@ const MARK_DONE_NOTIFY_SUMMARY = "Notified Sarah Chen (Director).";
 // Matches the Salesforce Canvas reference screenshot exactly:
 //   Row 1 (25% · 50% · 25%): Stakeholders | Opportunity Analysis | Meeting Notes
 //   Row 2 (50% · 50%):        Conversation Recap | Related Work
-//   Row 3 (50% · 50%):        About the client | Conversation opener
+//   Row 3 (50% · 50%):        About the client | Conversations Openers
 //
 // rowHeight=50, margin=16 → 1 grid unit = 66px
 //   h=4  → 248px  both rows visible at once in viewport
@@ -307,7 +312,7 @@ export default function CallPrepDetailPage() {
     }
     if (/hook|angle|opener|icebreak|conversation/.test(lc)) {
       return {
-        title: "Conversation opener",
+        title: "Conversations Openers",
         icon: "news",
         answer: call.relatedNews.items.map((item, i) => `${i + 1}. ${item.headline}`).join("\n\n"),
       };
@@ -659,7 +664,7 @@ const PANEL_CONFIG: Record<string, { icon: React.ElementType; title: string; ico
   opportunity:  { icon: BarChart2,      title: "Opportunity Analysis",   iconBg: "bg-rose-500"    },
   meeting:       { icon: Flag,           title: "Sales Play",               iconBg: "bg-blue-500"    },
   recap:        { icon: MessageCircle,  title: "Conversation recap",     iconBg: "bg-emerald-500" },
-  news:         { icon: Newspaper,      title: "Conversation opener",   iconBg: "bg-sky-500"     },
+  news:         { icon: Newspaper,      title: "Conversations Openers",   iconBg: "bg-sky-500"     },
   work:         { icon: BookOpen,       title: "Related Work",           iconBg: "bg-teal-500"    },
   tech:         { icon: Cpu,            title: "About the client",       iconBg: "bg-indigo-500"  },
 };
@@ -917,7 +922,13 @@ function PanelCard({
       <div className="relative flex flex-shrink-0 items-center gap-3">
         <PanelLeadIcon
           lucide={cfg.icon}
-          className={id === "stakeholders" ? "size-5 opacity-90" : undefined}
+          className={
+            id === "stakeholders"
+              ? "size-5 text-[rgba(0,0,0,0.55)]"
+              : id === "meeting"
+                ? "size-[18px]"
+                : undefined
+          }
         />
         <span
           className={cn(
@@ -942,9 +953,15 @@ function PanelCard({
               type="button"
               aria-label={`View ${cfg.title} details`}
               onClick={() => onExpand(id)}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-[rgba(0,0,0,0.45)] transition-colors hover:bg-black/[0.04] print:hidden"
+              className={cn(
+                "flex items-center justify-center rounded-md text-[rgba(0,0,0,0.45)] transition-colors hover:bg-black/[0.04] print:hidden",
+                id === "stakeholders" ? "size-8" : "h-8 w-8",
+              )}
             >
-              <Maximize2 className="size-[14px] opacity-90" strokeWidth={1.75} />
+              <Maximize2
+                className={cn("opacity-90", id === "stakeholders" ? "size-5" : "size-[14px]")}
+                strokeWidth={1.75}
+              />
             </button>
           )}
           <PanelAIFeedbackMenu
@@ -958,7 +975,8 @@ function PanelCard({
       <div
         data-panel-body
         className={cn(
-          "relative mt-4 flex-1 overflow-y-auto pr-1 transition-all duration-300 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/10 [&::-webkit-scrollbar-track]:bg-transparent",
+          "relative flex-1 overflow-y-auto pr-1 transition-all duration-300 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/10 [&::-webkit-scrollbar-track]:bg-transparent",
+          id === "stakeholders" ? "mt-[10px]" : "mt-4",
           collapsed && "hidden"
         )}
       >
@@ -1099,16 +1117,89 @@ function TkxelRailIcon({ className }: { className?: string }) {
 }
 
 // ── Stakeholders panel ────────────────────────────────────────────────────────
-/** Figma Revsphere sidebar 2040:32928 — tabs, profile row, PROSPECT SUMMARY bullets, EDUCATION. */
-function StakeholdersPanel({ call }: { call: CallData }) {
+function stakeholderCardSubtitle(s: Stakeholder): string {
+  const technical = s.panelTechnicalLabel ?? formatStakeholderTechnical(s.technicalLevel);
+  if (s.isDecisionMaker) return `Decision-maker • ${technical}`;
+  return `${s.role} • ${technical}`;
+}
+
+/** Grid card — list rows: name, badges, subtitle, LinkedIn or tk mark (matches stakeholder list design). */
+function StakeholdersListPanel({ call }: { call: CallData }) {
   const tkxel = call.tkxelAttendees ?? [];
+  const listed = call.stakeholders.filter((s) => s.confirmed !== false);
+
+  if (listed.length === 0 && tkxel.length === 0) {
+    return (
+      <p className="text-[14px] italic text-[rgba(0,0,0,0.35)]">No stakeholders on file for this call.</p>
+    );
+  }
+
+  return (
+    <div className="w-full border-t border-[rgba(0,0,0,0.08)]">
+      <div className="flex flex-col divide-y divide-[rgba(0,0,0,0.08)]">
+        {listed.map((s) => (
+          <div key={s.name} className="flex items-start gap-3 py-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="truncate text-[14px] font-semibold leading-4 text-[rgba(0,0,0,0.9)]">{s.name}</span>
+                {call.person === s.name && s.confirmed ? (
+                  <span className="shrink-0 rounded-full bg-[#ecfdf3] px-2 py-0.5 text-[12px] font-medium leading-4 text-[#087443]">
+                    Attending
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 text-[14px] font-normal leading-5 text-[rgba(0,0,0,0.5)]">
+                {stakeholderCardSubtitle(s)}
+              </p>
+            </div>
+            {s.linkedin && s.linkedin !== "#" ? (
+              <a
+                href={s.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 text-[#0a66c2] transition-opacity hover:opacity-75"
+                aria-label={`${s.name} on LinkedIn`}
+              >
+                <LinkedInIcon className="h-[18px] w-[18px]" />
+              </a>
+            ) : null}
+          </div>
+        ))}
+        {tkxel.map((a) => (
+          <div key={`internal-${a.name}`} className="flex items-start gap-3 py-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[14px] font-semibold leading-4 text-[rgba(0,0,0,0.9)]">{a.name}</span>
+                <span className="shrink-0 rounded-[20px] bg-[rgba(0,0,0,0.08)] px-2 py-px text-[12px] font-medium leading-[18px] text-[rgba(0,0,0,0.7)]">
+                  Internal
+                </span>
+              </div>
+              <p className="mt-1 text-[14px] font-normal leading-5 text-[rgba(0,0,0,0.5)]">{a.role}</p>
+            </div>
+            <div className="shrink-0 pt-0.5">
+              <TkxelRailIcon />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Expanded drawer — tabs, portrait, prospect summary, education, previous companies (internal attendees stay on grid card only). */
+function StakeholdersDetailPanel({ call }: { call: CallData }) {
   const confirmed = call.stakeholders.filter((s) => s.confirmed);
   const tabPeople = confirmed.length > 0 ? confirmed : call.stakeholders;
   const [activeIdx, setActiveIdx] = useState(0);
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   useEffect(() => {
     setActiveIdx((i) => Math.min(i, Math.max(0, tabPeople.length - 1)));
   }, [call.id, tabPeople.length]);
+
+  useEffect(() => {
+    setPhotoFailed(false);
+  }, [call.id, activeIdx]);
 
   if (tabPeople.length === 0) {
     return <p className="text-[14px] italic text-[rgba(0,0,0,0.35)]">No stakeholders on file for this call.</p>;
@@ -1116,7 +1207,16 @@ function StakeholdersPanel({ call }: { call: CallData }) {
 
   const safeIdx = Math.min(activeIdx, tabPeople.length - 1);
   const active = tabPeople[safeIdx];
-  const avatarSrc = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(active.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+  const monogram =
+    active.initials?.trim() ||
+    active.name
+      .split(/\s+/)
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() ||
+    "?";
+  const showPhoto = Boolean(active.photoUrl) && !photoFailed;
 
   const technical = active.panelTechnicalLabel ?? formatStakeholderTechnical(active.technicalLevel);
   const swayLabel = active.isDecisionMaker ? "Decision-maker" : "Participant";
@@ -1125,76 +1225,110 @@ function StakeholdersPanel({ call }: { call: CallData }) {
     ? active.summary.split(/(?<=\.)\s+/).map((s) => s.trim()).filter(Boolean)
     : [];
 
+  const hasEducation = (active.education?.length ?? 0) > 0;
+  const hasPrev = (active.previousCompanies?.length ?? 0) > 0;
+  const hasLower = hasEducation || hasPrev;
+  const hasSummary = summaryBullets.length > 0;
+
   return (
-    <div className="flex flex-col gap-[18px]">
+    <div className="flex w-full flex-col gap-[18px]">
       {tabPeople.length > 1 && (
-        <div className="flex w-full flex-wrap items-center gap-1">
-          {tabPeople.map((s, i) => {
-            const selected = safeIdx === i;
-            return (
-              <button
-                key={s.name}
-                type="button"
-                onClick={() => setActiveIdx(i)}
-                className={cn(
-                  "relative shrink-0 whitespace-nowrap px-2 pb-3 pt-0 text-left text-[14px] font-medium leading-4 transition-colors",
-                  selected ? "text-[rgba(0,0,0,0.9)] border-b-[1.5px] border-solid border-[rgba(0,0,0,0.9)]" : "text-[rgba(0,0,0,0.5)] hover:text-[rgba(0,0,0,0.65)]",
-                )}
-              >
-                {s.name}
-              </button>
-            );
-          })}
+        <div className="flex w-full items-center">
+          <div className="flex flex-wrap items-center gap-1">
+            {tabPeople.map((s, i) => {
+              const selected = safeIdx === i;
+              return (
+                <button
+                  key={s.name}
+                  type="button"
+                  onClick={() => setActiveIdx(i)}
+                  className={cn(
+                    "relative flex shrink-0 items-center justify-center gap-2 whitespace-nowrap px-2 py-3 text-left text-[14px] font-medium leading-4 transition-colors",
+                    selected
+                      ? "border-b-[1.5px] border-solid border-[rgba(0,0,0,0.9)] text-[rgba(0,0,0,0.9)]"
+                      : "text-[rgba(0,0,0,0.5)] hover:text-[rgba(0,0,0,0.65)]",
+                  )}
+                >
+                  {s.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      <div className="w-full rounded-lg">
+      {/* Figma 2040:41508 — profile row in rounded 8px frame */}
+      <div className="flex w-full shrink-0 flex-col rounded-[8px]">
         <div className="flex w-full items-center gap-3">
-          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-[10px] bg-slate-100">
-            <img src={avatarSrc} alt="" className="h-full w-full object-cover object-top" />
+          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-[10px] bg-[rgba(0,0,0,0.06)]">
+            {showPhoto ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={active.photoUrl}
+                alt=""
+                className="pointer-events-none h-full w-full object-cover object-top"
+                onError={() => setPhotoFailed(true)}
+              />
+            ) : (
+              <div
+                className={cn(
+                  "flex h-full w-full items-center justify-center text-[13px] font-semibold tracking-tight text-white",
+                  active.color || "bg-slate-500",
+                )}
+                aria-hidden
+              >
+                {monogram}
+              </div>
+            )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-            <p className="truncate text-[14px] font-medium leading-4 text-[rgba(0,0,0,0.9)]">{active.name}</p>
-            <p className="text-[14px] font-normal leading-5 text-[rgba(0,0,0,0.5)]">
-              {active.role}
-              <span className="text-[rgba(0,0,0,0.35)]"> • </span>
-              {swayLabel}
-              <span className="text-[rgba(0,0,0,0.35)]"> • </span>
-              {technical}
-            </p>
+            <p className="w-full truncate text-[14px] font-medium leading-4 text-[rgba(0,0,0,0.9)]">{active.name}</p>
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-1 text-[14px] font-normal leading-5 text-[rgba(0,0,0,0.5)]">
+              <span className="whitespace-nowrap">{active.role}</span>
+              <span aria-hidden className="whitespace-nowrap">
+                •
+              </span>
+              <span className="whitespace-nowrap">{swayLabel}</span>
+              <span aria-hidden className="whitespace-nowrap">
+                •
+              </span>
+              <span className="whitespace-nowrap">{technical}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {summaryBullets.length > 0 && (
+      {!hasSummary && hasLower ? <PanelHairlineDivider /> : null}
+
+      {hasSummary ? (
         <div className="flex w-full flex-col gap-[14px]">
           <div className="flex items-start gap-2">
             <Sparkles className="mt-0.5 size-[14px] shrink-0 text-[rgba(0,0,0,0.45)]" strokeWidth={1.75} />
-            <p className="text-[12px] font-normal uppercase leading-normal tracking-[1px] text-[rgba(0,0,0,0.7)]">
+            <p className="whitespace-nowrap text-[12px] font-normal uppercase leading-normal tracking-[1px] text-[rgba(0,0,0,0.7)]">
               Prospect summary
             </p>
           </div>
           {summaryBullets.map((line, i) => (
-            <ul key={i} className="w-full list-disc pl-[21px] text-[14px] font-normal not-italic text-[rgba(0,0,0,0.5)]">
-              <li>
+            <ul key={i} className="w-full min-w-full text-[14px] font-normal not-italic text-[rgba(0,0,0,0.5)]">
+              <li className="ms-[21px] list-disc ps-0.5 marker:text-[rgba(0,0,0,0.35)]">
                 <span className="leading-[1.5]">{line}</span>
               </li>
             </ul>
           ))}
         </div>
-      )}
+      ) : null}
 
-      <PanelHairlineDivider />
+      {hasSummary && hasLower ? <PanelHairlineDivider /> : null}
 
       {active.education && active.education.length > 0 && (
         <div className="flex w-full flex-col gap-[14px]">
-          <p className="text-[12px] font-normal uppercase leading-normal tracking-[1px] text-[rgba(0,0,0,0.7)]">
+          <p className="whitespace-nowrap text-[12px] font-normal uppercase leading-normal tracking-[1px] text-[rgba(0,0,0,0.7)]">
             Education
           </p>
           <div className="flex flex-col gap-[14px]">
             {active.education.map((e, i) => (
-              <div key={i} className="flex w-full flex-col gap-1">
-                <p className="truncate text-[14px] font-medium leading-4 text-[rgba(0,0,0,0.9)]">{e.degree}</p>
+              <div key={i} className="flex w-full flex-col justify-center gap-1">
+                <p className="w-full truncate text-[14px] font-medium leading-4 text-[rgba(0,0,0,0.9)]">{e.degree}</p>
                 <p className="text-[14px] font-normal leading-5 text-[rgba(0,0,0,0.5)]">
                   {e.institution}
                   {e.year ? ` · ${e.year}` : ""}
@@ -1209,7 +1343,7 @@ function StakeholdersPanel({ call }: { call: CallData }) {
         <>
           <PanelHairlineDivider />
           <div className="flex w-full flex-col gap-[14px]">
-            <p className="text-[12px] font-normal uppercase leading-normal tracking-[1px] text-[rgba(0,0,0,0.7)]">
+            <p className="whitespace-nowrap text-[12px] font-normal uppercase leading-normal tracking-[1px] text-[rgba(0,0,0,0.7)]">
               Previous companies
             </p>
             <div className="flex flex-col gap-[14px]">
@@ -1230,37 +1364,13 @@ function StakeholdersPanel({ call }: { call: CallData }) {
           </div>
         </>
       )}
-
-      {tkxel.length > 0 && (
-        <div className={cn("flex flex-col", (summaryBullets.length > 0 || active.education?.length) && "pt-1")}>
-          <div className="relative mb-4 w-full shrink-0">
-            <PanelHairlineDivider />
-          </div>
-          <p className="mb-3 text-[12px] font-normal uppercase tracking-[1px] text-[rgba(0,0,0,0.5)]">
-            Tkxel on this call
-          </p>
-          <div className="divide-y divide-[#e5e5e5]">
-            {tkxel.map((a) => (
-              <div key={a.name} className="flex flex-col gap-1 py-[14px] first:pt-0">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <p className="text-[16px] font-semibold leading-[22px] tracking-[-0.2px] text-[rgba(0,0,0,0.9)]">
-                      {a.name}
-                    </p>
-                    <span className="shrink-0 rounded-[20px] bg-[rgba(0,0,0,0.08)] px-2 py-px text-[14px] font-medium leading-[18px] text-[rgba(0,0,0,0.7)]">
-                      Internal
-                    </span>
-                  </div>
-                  <TkxelRailIcon />
-                </div>
-                <p className="pr-8 text-[14px] font-normal leading-5 text-[rgba(0,0,0,0.5)]">{a.role}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
+}
+
+function StakeholdersPanel({ call, mode = "list" }: { call: CallData; mode?: "list" | "detail" }) {
+  if (mode === "detail") return <StakeholdersDetailPanel call={call} />;
+  return <StakeholdersListPanel call={call} />;
 }
 
 // ── Opportunity analysis panel ────────────────────────────────────────────────
@@ -1964,20 +2074,22 @@ const DRAWER_CONFIG: Record<string, { icon: React.ElementType; title: string; ac
   meeting:      { icon: Flag,          title: "Sales Play",            accent: "text-blue-500"    },
   recap:        { icon: MessageCircle, title: "Conversation recap",   accent: "text-emerald-500" },
   work:         { icon: BookOpen,      title: "Related Work",         accent: "text-teal-500"    },
-  news:         { icon: Newspaper,     title: "Conversation opener", accent: "text-amber-500"   },
+  news:         { icon: Newspaper,     title: "Conversations Openers", accent: "text-amber-500"   },
 };
 
-// ── Shared drawer primitives ──────────────────────────────────────────────────
+// ── Shared drawer primitives — align with Stakeholders / Revsphere rail ────────
 function DrawerSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h3 className="mb-3 text-[16px] font-bold text-slate-900">{title}</h3>
+      <h3 className="mb-[14px] text-[12px] font-normal uppercase leading-normal tracking-[1px] text-[rgba(0,0,0,0.7)]">
+        {title}
+      </h3>
       {children}
     </section>
   );
 }
 function DrawerDivider() {
-  return <div className="h-px bg-slate-100" />;
+  return <PanelHairlineDivider />;
 }
 function DrawerBody({ children }: { children: React.ReactNode }) {
   const text = typeof children === "string" ? children : null;
@@ -1985,69 +2097,75 @@ function DrawerBody({ children }: { children: React.ReactNode }) {
     const bullets = text.split(/(?<=\.)\s+/).filter(Boolean);
     if (bullets.length > 1) {
       return (
-        <ul className="flex flex-col gap-2">
+        <ul className="w-full list-outside list-disc ps-[21px] text-[14px] font-normal not-italic text-[rgba(0,0,0,0.5)] marker:text-[rgba(0,0,0,0.35)]">
           {bullets.map((b, i) => (
-            <li key={i} className="flex items-start gap-2.5">
-              <span className="mt-[7px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#1e2a6e]/30" />
-              <span className="text-[13.5px] leading-relaxed text-slate-800">{b}</span>
+            <li key={i} className="ps-0.5 leading-[1.5]">
+              {b}
             </li>
           ))}
         </ul>
       );
     }
   }
-  return <p className="text-[13.5px] leading-relaxed text-slate-800">{children}</p>;
+  return <p className="text-[14px] font-normal leading-[1.5] text-[rgba(0,0,0,0.5)]">{children}</p>;
 }
 function DrawerBlockquote({ children }: { children: React.ReactNode }) {
   return (
-    <blockquote className="rounded-r-xl border-l-[3px] border-slate-300 bg-slate-50 py-3 pl-4 pr-4">
-      <p className="text-[14px] italic leading-relaxed text-slate-600">{children}</p>
+    <blockquote className="border-l-[1.5px] border-[rgba(0,0,0,0.12)] bg-[rgba(0,0,0,0.02)] py-3 pl-4 pr-3">
+      <p className="text-[14px] font-normal italic leading-[1.5] text-[rgba(0,0,0,0.55)]">{children}</p>
     </blockquote>
   );
 }
 function DrawerCallout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-[#1e2a6e]/10 bg-[#1e2a6e]/5 px-5 py-4">
-      <p className="text-[14px] font-medium leading-relaxed text-[#1e2a6e]">{children}</p>
+    <div className="rounded-lg border border-[rgba(0,0,0,0.08)] bg-[rgba(0,0,0,0.03)] px-4 py-3.5">
+      <p className="text-[14px] font-medium leading-[1.5] text-[rgba(0,0,0,0.85)]">{children}</p>
     </div>
   );
 }
 function DrawerField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-2.5 text-[13px] font-semibold text-slate-800">{label}</p>
+      <p className="mb-[14px] text-[12px] font-normal uppercase leading-normal tracking-[1px] text-[rgba(0,0,0,0.7)]">
+        {label}
+      </p>
       {children}
     </div>
   );
 }
 function DrawerTabBar({ tabs, active, onChange }: { tabs: string[]; active: number; onChange: (i: number) => void }) {
   return (
-    <div className="-mx-1 flex border-b border-slate-200 px-5">
-      {tabs.map((tab, i) => (
-        <button
-          key={tab}
-          onClick={() => onChange(i)}
-          className={cn(
-            "relative px-4 pb-3 pt-1 text-[13px] font-medium transition-colors",
-            i === active ? "text-slate-900" : "text-slate-400 hover:text-slate-600",
-          )}
-        >
-          {tab}
-          {i === active && (
-            <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-slate-900" />
-          )}
-        </button>
-      ))}
+    <div className="flex w-full flex-wrap items-center gap-1" role="tablist">
+      {tabs.map((tab, i) => {
+        const selected = active === i;
+        return (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            onClick={() => onChange(i)}
+            className={cn(
+              "relative shrink-0 whitespace-nowrap px-2 py-3 text-left text-[14px] font-medium leading-4 transition-colors",
+              selected
+                ? "border-b-[1.5px] border-solid border-[rgba(0,0,0,0.9)] text-[rgba(0,0,0,0.9)]"
+                : "text-[rgba(0,0,0,0.5)] hover:text-[rgba(0,0,0,0.65)]",
+            )}
+          >
+            {tab}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
 // ── Stakeholder drawer ────────────────────────────────────────────────────────
-/** Expander rail: reuse the grid Stakeholders focus card so expand shows the same Figma-aligned layout (+ Tkxel block). */
+/** Expander rail: full stakeholder detail (tabs, summary, education); grid card stays the compact list. */
 function DrawerStakeholders({ call }: { call: CallData }) {
   return (
     <div className="px-6 py-6 pb-8">
-      <StakeholdersPanel key={call.id} call={call} />
+      <StakeholdersPanel key={call.id} call={call} mode="detail" />
     </div>
   );
 }
@@ -2056,51 +2174,49 @@ function DrawerOpportunity({ call }: { call: CallData }) {
   const [tab, setTab] = useState(0);
   const oa = call.opportunityAnalysis;
   return (
-    <div className="flex flex-col">
+    <div className="space-y-[18px] px-6 py-6 pb-8">
       <DrawerTabBar tabs={["Context", "Risk"]} active={tab} onChange={setTab} />
-      <div className="flex flex-col gap-6 px-6 py-6">
-        {tab === 0 && (
-          <>
-            <DrawerField label="Why they are talking to us">
-              <DrawerBody>{oa.whyTalkingToUs}</DrawerBody>
-            </DrawerField>
-            <div className="h-px bg-slate-100" />
-            <DrawerField label="In their own words">
-              <DrawerBlockquote>{oa.problemInTheirWords}</DrawerBlockquote>
-            </DrawerField>
-            <div className="h-px bg-slate-100" />
-            <DrawerField label="What they have tried">
-              <DrawerBody>{oa.whatTheyHaveTried}</DrawerBody>
-            </DrawerField>
-            <div className="h-px bg-slate-100" />
-            <DrawerField label="What a win looks like">
-              <DrawerBody>{oa.whatWinLooksLike}</DrawerBody>
-            </DrawerField>
-            <div className="h-px bg-slate-100" />
-            <DrawerField label="The unlock question">
-              <DrawerCallout>{oa.unlockQuestion}</DrawerCallout>
-            </DrawerField>
-          </>
-        )}
-        {tab === 1 && (
-          <>
-            <DrawerField label="Deal risk">
-              <DrawerBody>{oa.dealRisk}</DrawerBody>
-            </DrawerField>
-            <div className="h-px bg-slate-100" />
-            <DrawerField label="What to avoid">
-              <ul className="flex flex-col gap-2.5">
-                {oa.whatToAvoid.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-[13px] leading-relaxed text-slate-700">
-                    <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-rose-400" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </DrawerField>
-          </>
-        )}
-      </div>
+      {tab === 0 && (
+        <div className="space-y-[18px]">
+          <DrawerField label="Why they are talking to us">
+            <DrawerBody>{oa.whyTalkingToUs}</DrawerBody>
+          </DrawerField>
+          <DrawerDivider />
+          <DrawerField label="In their own words">
+            <DrawerBlockquote>{oa.problemInTheirWords}</DrawerBlockquote>
+          </DrawerField>
+          <DrawerDivider />
+          <DrawerField label="What they have tried">
+            <DrawerBody>{oa.whatTheyHaveTried}</DrawerBody>
+          </DrawerField>
+          <DrawerDivider />
+          <DrawerField label="What a win looks like">
+            <DrawerBody>{oa.whatWinLooksLike}</DrawerBody>
+          </DrawerField>
+          <DrawerDivider />
+          <DrawerField label="The unlock question">
+            <DrawerCallout>{oa.unlockQuestion}</DrawerCallout>
+          </DrawerField>
+        </div>
+      )}
+      {tab === 1 && (
+        <div className="space-y-[18px]">
+          <DrawerField label="Deal risk">
+            <DrawerBody>{oa.dealRisk}</DrawerBody>
+          </DrawerField>
+          <DrawerDivider />
+          <DrawerField label="What to avoid">
+            <ul className="flex flex-col gap-2.5">
+              {oa.whatToAvoid.map((item, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-[14px] leading-[1.5] text-[rgba(0,0,0,0.5)]">
+                  <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[rgba(0,0,0,0.2)]" aria-hidden />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </DrawerField>
+        </div>
+      )}
     </div>
   );
 }
@@ -2109,68 +2225,68 @@ function DrawerMeeting({ call }: { call: CallData }) {
   const [tab, setTab] = useState(0);
   const mn = call.meetingNotes;
   return (
-    <div className="flex flex-col">
+    <div className="space-y-[18px] px-6 py-6 pb-8">
       <DrawerTabBar tabs={["Goal", "Questions", "Close", "Objections"]} active={tab} onChange={setTab} />
-      <div className="flex flex-col gap-6 px-6 py-6">
-        {tab === 0 && (
-          <DrawerField label="How to open">
-            <DrawerBlockquote>{mn.howToOpen}</DrawerBlockquote>
-          </DrawerField>
-        )}
-        {tab === 1 && (
-          <DrawerField label="Discovery arc">
-            <ol className="relative mt-1 flex flex-col">
-              {mn.discoveryArc.map((item, i) => {
-                const isLast = i === mn.discoveryArc.length - 1;
-                return (
-                  <li key={i} className="relative flex gap-4 pb-5 last:pb-0">
-                    {!isLast && (
-                      <div className="absolute left-[9px] top-5 h-full w-px bg-slate-100" />
-                    )}
-                    <div className="mt-1 flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border-2 border-slate-300 bg-white">
-                      <div className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+      {tab === 0 && (
+        <DrawerField label="How to open">
+          <DrawerBlockquote>{mn.howToOpen}</DrawerBlockquote>
+        </DrawerField>
+      )}
+      {tab === 1 && (
+        <DrawerField label="Discovery arc">
+          <ol className="relative mt-1 flex flex-col">
+            {mn.discoveryArc.map((item, i) => {
+              const isLast = i === mn.discoveryArc.length - 1;
+              return (
+                <li key={i} className="relative flex gap-4 pb-5 last:pb-0">
+                  {!isLast && (
+                    <div className="absolute left-[9px] top-5 h-full w-px bg-[rgba(0,0,0,0.08)]" aria-hidden />
+                  )}
+                  <div className="mt-1 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-[rgba(0,0,0,0.12)] bg-white">
+                    <div className="h-1.5 w-1.5 rounded-full bg-[rgba(0,0,0,0.35)]" />
+                  </div>
+                  <div className="min-w-0 flex-1 pb-1">
+                    <p className="text-[14px] font-semibold leading-snug text-[rgba(0,0,0,0.9)]">{item.question}</p>
+                    <p className="mt-1.5 rounded-lg bg-[rgba(0,0,0,0.03)] px-3 py-2 text-[14px] leading-[1.5] text-[rgba(0,0,0,0.45)]">
+                      {item.purpose}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </DrawerField>
+      )}
+      {tab === 2 && (
+        <DrawerField label="How to close">
+          <DrawerBody>{mn.howToClose}</DrawerBody>
+        </DrawerField>
+      )}
+      {tab === 3 && (
+        <DrawerField label="If things go wrong">
+          <ol className="relative mt-1 flex flex-col">
+            {mn.thingsGoWrong.map((item, i) => {
+              const isLast = i === mn.thingsGoWrong.length - 1;
+              return (
+                <li key={i} className="relative flex gap-4 pb-5 last:pb-0">
+                  {!isLast && (
+                    <div className="absolute left-[9px] top-5 h-full w-px bg-[rgba(0,0,0,0.08)]" aria-hidden />
+                  )}
+                  <div className="mt-1 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-[rgba(0,0,0,0.12)] bg-white">
+                    <div className="h-1.5 w-1.5 rounded-full bg-[rgba(0,0,0,0.45)]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] font-semibold leading-snug text-[rgba(0,0,0,0.9)]">{item.scenario}</p>
+                    <div className="mt-2 rounded-lg border border-[rgba(0,0,0,0.06)] bg-[rgba(0,0,0,0.025)] px-4 py-3">
+                      <p className="text-[14px] leading-[1.5] text-[rgba(0,0,0,0.55)]">{item.response}</p>
                     </div>
-                    <div className="min-w-0 flex-1 pb-1">
-                      <p className="text-[14px] font-semibold leading-snug text-slate-900">{item.question}</p>
-                      <p className="mt-1.5 rounded-lg bg-slate-50 px-3 py-2 text-[12.5px] leading-relaxed text-slate-500">{item.purpose}</p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </DrawerField>
-        )}
-        {tab === 2 && (
-          <DrawerField label="How to close">
-            <DrawerBody>{mn.howToClose}</DrawerBody>
-          </DrawerField>
-        )}
-        {tab === 3 && (
-          <DrawerField label="If things go wrong">
-            <ol className="relative mt-1 flex flex-col">
-              {mn.thingsGoWrong.map((item, i) => {
-                const isLast = i === mn.thingsGoWrong.length - 1;
-                return (
-                  <li key={i} className="relative flex gap-4 pb-5 last:pb-0">
-                    {!isLast && (
-                      <div className="absolute left-[9px] top-5 h-full w-px bg-slate-100" />
-                    )}
-                    <div className="mt-1 flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border-2 border-amber-300 bg-white">
-                      <div className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[14px] font-semibold leading-snug text-slate-900">{item.scenario}</p>
-                      <div className="mt-2 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
-                        <p className="text-[13px] leading-relaxed text-amber-900/80">{item.response}</p>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </DrawerField>
-        )}
-      </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </DrawerField>
+      )}
     </div>
   );
 }
@@ -2179,30 +2295,30 @@ function DrawerRecapEmails({ messages }: { messages: { person: string; email: st
   const lastIdx = messages.length - 1;
   const [expandedIdx, setExpandedIdx] = useState<number>(lastIdx);
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-slate-100">
+    <div className="flex flex-col overflow-hidden rounded-lg border border-[rgba(0,0,0,0.08)]">
       {messages.map((r, i) => {
         const isExpanded = expandedIdx === i;
         const initial = r.person.trim()[0]?.toUpperCase() ?? "?";
         const color = avatarColor(r.person);
         const firstName = r.person.split(" ")[0];
         return (
-          <div key={i} className={cn(i < messages.length - 1 && "border-b border-slate-100")}>
+          <div key={i} className={cn(i < messages.length - 1 && "border-b border-[rgba(0,0,0,0.08)]")}>
             {isExpanded ? (
               <div className="px-4 py-3.5">
                 <div className="flex items-start gap-3">
-                  <div className={cn("mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white", color)}>
+                  <div className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white", color)}>
                     {initial}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <GmailIcon className="h-[13px] w-[13px] flex-shrink-0" />
-                      <p className="text-[13px] font-semibold text-slate-900">{r.person}</p>
-                      <span className="ml-auto flex-shrink-0 text-[11px] text-slate-400">{r.timestamp}</span>
+                      <GmailIcon className="h-[13px] w-[13px] shrink-0 opacity-70" />
+                      <p className="text-[14px] font-semibold leading-4 text-[rgba(0,0,0,0.9)]">{r.person}</p>
+                      <span className="ml-auto shrink-0 text-[11px] text-[rgba(0,0,0,0.35)]">{r.timestamp}</span>
                     </div>
-                    <p className="mt-0.5 text-[10.5px] text-slate-400">{r.email}</p>
-                    <div className="mt-2.5 flex flex-col gap-2 border-t border-slate-100 pt-2.5">
+                    <p className="mt-0.5 text-[10.5px] text-[rgba(0,0,0,0.4)]">{r.email}</p>
+                    <div className="mt-2.5 flex flex-col gap-2 border-t border-[rgba(0,0,0,0.08)] pt-2.5">
                       {r.note.split("\n\n").map((para, pi) => (
-                        <p key={pi} className="whitespace-pre-line text-[12.5px] leading-relaxed text-slate-700">{para}</p>
+                        <p key={pi} className="whitespace-pre-line text-[14px] leading-[1.5] text-[rgba(0,0,0,0.55)]">{para}</p>
                       ))}
                     </div>
                   </div>
@@ -2210,18 +2326,19 @@ function DrawerRecapEmails({ messages }: { messages: { person: string; email: st
               </div>
             ) : (
               <button
+                type="button"
                 onClick={() => setExpandedIdx(i)}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-slate-50"
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[rgba(0,0,0,0.02)]"
               >
-                <div className={cn("flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white", color)}>
+                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white", color)}>
                   {initial}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-[13px] font-semibold text-slate-900">{firstName}</p>
-                    <span className="flex-shrink-0 text-[11px] text-slate-400">{r.timestamp}</span>
+                    <p className="text-[14px] font-semibold text-[rgba(0,0,0,0.9)]">{firstName}</p>
+                    <span className="shrink-0 text-[11px] text-[rgba(0,0,0,0.35)]">{r.timestamp}</span>
                   </div>
-                  <p className="mt-0.5 truncate text-[12px] text-slate-400">
+                  <p className="mt-0.5 truncate text-[13px] text-[rgba(0,0,0,0.45)]">
                     {r.note.split("\n\n")[0].split("\n")[0]}
                   </p>
                 </div>
@@ -2238,39 +2355,35 @@ function DrawerRecap({ call }: { call: CallData }) {
   const [tab, setTab] = useState(0);
   const cr = call.conversationRecap;
   return (
-    <div className="flex flex-col">
+    <div className="space-y-[18px] px-6 py-6 pb-8">
       <DrawerTabBar tabs={["History", "Emails", "Insights"]} active={tab} onChange={setTab} />
-      <div className="flex flex-col gap-6 px-6 py-6">
-        {tab === 0 && (
-          <>
-            <DrawerField label="What has been said">
-              <DrawerBody>{cr.whatHasBeenSaid}</DrawerBody>
-            </DrawerField>
-            <div className="h-px bg-slate-100" />
-            <DrawerField label="Most important thing said">
-              <DrawerBlockquote>{cr.mostImportantThing}</DrawerBlockquote>
-            </DrawerField>
-            <div className="h-px bg-slate-100" />
-            <DrawerField label="Commitments already made">
-              <DrawerBody>{cr.commitmentsMade}</DrawerBody>
-            </DrawerField>
-          </>
-        )}
-        {tab === 1 && (
-          <DrawerRecapEmails messages={cr.recent} />
-        )}
-        {tab === 2 && (
-          <>
-            <DrawerField label="Their communication style">
-              <DrawerBody>{cr.communicationStyle}</DrawerBody>
-            </DrawerField>
-            <div className="h-px bg-slate-100" />
-            <DrawerField label="The one thing to make sure comes up">
-              <DrawerCallout>{cr.oneThing}</DrawerCallout>
-            </DrawerField>
-          </>
-        )}
-      </div>
+      {tab === 0 && (
+        <div className="space-y-[18px]">
+          <DrawerField label="What has been said">
+            <DrawerBody>{cr.whatHasBeenSaid}</DrawerBody>
+          </DrawerField>
+          <DrawerDivider />
+          <DrawerField label="Most important thing said">
+            <DrawerBlockquote>{cr.mostImportantThing}</DrawerBlockquote>
+          </DrawerField>
+          <DrawerDivider />
+          <DrawerField label="Commitments already made">
+            <DrawerBody>{cr.commitmentsMade}</DrawerBody>
+          </DrawerField>
+        </div>
+      )}
+      {tab === 1 && <DrawerRecapEmails messages={cr.recent} />}
+      {tab === 2 && (
+        <div className="space-y-[18px]">
+          <DrawerField label="Their communication style">
+            <DrawerBody>{cr.communicationStyle}</DrawerBody>
+          </DrawerField>
+          <DrawerDivider />
+          <DrawerField label="The one thing to make sure comes up">
+            <DrawerCallout>{cr.oneThing}</DrawerCallout>
+          </DrawerField>
+        </div>
+      )}
     </div>
   );
 }
@@ -2278,116 +2391,95 @@ function DrawerRecap({ call }: { call: CallData }) {
 function DrawerWork({ call }: { call: CallData }) {
   const [tab, setTab] = useState(0);
   return (
-    <div className="flex flex-col">
+    <div className="space-y-[18px] px-6 py-6 pb-8">
       <DrawerTabBar tabs={["Case Studies", "AI Relevance"]} active={tab} onChange={setTab} />
-      <div className="flex flex-col gap-6 px-6 py-6">
-        {tab === 0 && (
-          <>
-            {call.relatedWork.map((w, i) => (
-              <div key={i} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <p className="mb-3.5 text-[14px] font-bold text-slate-900">{w.label}</p>
-                {w.problem && (
-                  <div className="mb-3">
-                    <p className="mb-1.5 text-[12px] font-semibold text-slate-700">Problem</p>
-                    <p className="text-[13px] leading-relaxed text-slate-600">{w.problem}</p>
-                  </div>
-                )}
-                {w.solution && (
-                  <div className="mb-4">
-                    <p className="mb-1.5 text-[12px] font-semibold text-slate-700">How we solved it</p>
-                    <p className="text-[13px] leading-relaxed text-slate-600">{w.solution}</p>
-                  </div>
-                )}
-                <a
-                  href={w.href}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#2563eb] px-4 py-2 text-[12px] font-semibold text-white shadow-sm transition-all hover:bg-blue-700"
-                >
-                  View full case study <ArrowUpRight className="h-3.5 w-3.5" />
-                </a>
-              </div>
-            ))}
-          </>
-        )}
-        {tab === 1 && (
-          <div className="flex flex-col gap-5">
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-[#2563eb]" />
-              <p className="text-[12px] text-slate-400">Why each project is relevant to this call</p>
+      {tab === 0 && (
+        <div className="flex flex-col gap-[18px]">
+          {call.relatedWork.map((w, i) => (
+            <div key={i} className="rounded-lg border border-[rgba(0,0,0,0.08)] bg-[#fafafa] p-5">
+              <p className="mb-[14px] text-[14px] font-semibold leading-4 tracking-[-0.2px] text-[rgba(0,0,0,0.9)]">{w.label}</p>
+              {w.problem && (
+                <div className="mb-3">
+                  <p className="mb-[10px] text-[12px] font-normal uppercase leading-normal tracking-[1px] text-[rgba(0,0,0,0.55)]">
+                    Problem
+                  </p>
+                  <p className="text-[14px] leading-[1.5] text-[rgba(0,0,0,0.5)]">{w.problem}</p>
+                </div>
+              )}
+              {w.solution && (
+                <div className="mb-4">
+                  <p className="mb-[10px] text-[12px] font-normal uppercase leading-normal tracking-[1px] text-[rgba(0,0,0,0.55)]">
+                    How we solved it
+                  </p>
+                  <p className="text-[14px] leading-[1.5] text-[rgba(0,0,0,0.5)]">{w.solution}</p>
+                </div>
+              )}
+              <a
+                href={w.href}
+                className="inline-flex items-center gap-1.5 rounded-[10px] bg-[rgba(0,0,0,0.9)] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-black"
+              >
+                View full case study <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={1.75} />
+              </a>
             </div>
-            {call.relatedWork.map((w, i) => (
-              <div key={i} className="rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
-                <p className="mb-2.5 text-[13px] font-bold text-slate-900">{w.label}</p>
-                {w.aiRelevance ? (
-                  <DrawerBody>{w.aiRelevance}</DrawerBody>
-                ) : (
-                  <p className="text-[13px] text-slate-400 italic">No AI relevance note available.</p>
-                )}
-              </div>
-            ))}
+          ))}
+        </div>
+      )}
+      {tab === 1 && (
+        <div className="flex flex-col gap-[18px]">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-[14px] w-[14px] shrink-0 text-[rgba(0,0,0,0.35)]" strokeWidth={1.75} />
+            <p className="text-[12px] font-normal uppercase tracking-[1px] text-[rgba(0,0,0,0.55)]">
+              Why each project is relevant to this call
+            </p>
           </div>
-        )}
-      </div>
+          {call.relatedWork.map((w, i) => (
+            <div key={i} className="rounded-lg border border-[rgba(0,0,0,0.06)] bg-[rgba(0,0,0,0.02)] p-5">
+              <p className="mb-2 text-[14px] font-semibold leading-4 text-[rgba(0,0,0,0.9)]">{w.label}</p>
+              {w.aiRelevance ? (
+                <DrawerBody>{w.aiRelevance}</DrawerBody>
+              ) : (
+                <p className="text-[14px] italic leading-[1.5] text-[rgba(0,0,0,0.35)]">No AI relevance note available.</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 // ── News drawer ───────────────────────────────────────────────────────────────
 function DrawerNews({ call }: { call: CallData }) {
-  const [tab, setTab] = useState(0);
   const rn = call.relatedNews;
   return (
-    <div className="flex flex-col">
-      <DrawerTabBar tabs={["Signals", "How to use"]} active={tab} onChange={setTab} />
-      <div className="flex flex-col gap-6 px-6 py-6">
-        {tab === 0 && (
-          <>
-            {/* Warning callout */}
-            <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
-              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
-              <p className="text-[13px] leading-relaxed text-amber-900">{rn.whatNotToDo}</p>
-            </div>
-            <DrawerField label="What is happening in their world">
-              <div className="flex flex-col gap-5 mt-1">
-                {rn.items.map((item, i) => (
-                  <div key={i}>
-                    <div className="mb-1 flex items-start justify-between gap-3">
-                      <p className="text-[13.5px] font-semibold leading-snug text-slate-900">{item.headline}</p>
-                      <a href={item.href} className="mt-0.5 flex-shrink-0 text-[11px] text-blue-500 hover:underline">
-                        {item.source} ↗
-                      </a>
-                    </div>
-                    <p className="text-[13px] leading-relaxed text-slate-500">{item.context}</p>
-                  </div>
-                ))}
-              </div>
-            </DrawerField>
-          </>
-        )}
-        {tab === 1 && (
-          <>
-            <DrawerField label="How to use each signal">
-              <div className="flex flex-col gap-5 mt-1">
-                {rn.items.map((item, i) => (
-                  <div key={i}>
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{item.headline}</p>
-                    <div className="rounded-lg border-l-2 border-blue-300 bg-blue-50/60 px-3 py-2.5">
-                      <p className="text-[12.5px] italic leading-relaxed text-slate-600">{item.howToUse}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </DrawerField>
-            {rn.tkxelSignals && (
-              <>
-                <div className="h-px bg-slate-100" />
-                <DrawerField label="Tkxel signals worth mentioning">
-                  <DrawerBody>{rn.tkxelSignals}</DrawerBody>
-                </DrawerField>
-              </>
-            )}
-          </>
-        )}
+    <div className="space-y-[18px] px-6 py-6 pb-8">
+      <div className="flex items-start gap-3 rounded-lg border border-[rgba(0,0,0,0.08)] bg-[rgba(0,0,0,0.02)] px-4 py-3.5">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[rgba(0,0,0,0.35)]" strokeWidth={1.75} />
+        <p className="text-[14px] leading-[1.5] text-[rgba(0,0,0,0.55)]">{rn.whatNotToDo}</p>
       </div>
+      <DrawerField label="What is happening in their world">
+        <div className="mt-1 flex flex-col divide-y divide-[rgba(0,0,0,0.08)] border-b border-[rgba(0,0,0,0.08)]">
+          {rn.items.map((item, i) => (
+            <div key={i} className="py-[14px] first:pt-0 last:pb-0">
+              <div className="mb-1 flex items-start justify-between gap-3">
+                <p className="text-[14px] font-semibold leading-snug text-[rgba(0,0,0,0.9)]">{item.headline}</p>
+                <a href={item.href} className="mt-0.5 shrink-0 text-[12px] text-[rgba(0,0,0,0.45)] underline-offset-4 hover:text-[rgba(0,0,0,0.7)] hover:underline">
+                  {item.source} ↗
+                </a>
+              </div>
+              <p className="text-[14px] leading-[1.5] text-[rgba(0,0,0,0.5)]">{item.context}</p>
+            </div>
+          ))}
+        </div>
+      </DrawerField>
+      {rn.tkxelSignals ? (
+        <>
+          <DrawerDivider />
+          <DrawerField label="Tkxel signals worth mentioning">
+            <DrawerBody>{rn.tkxelSignals}</DrawerBody>
+          </DrawerField>
+        </>
+      ) : null}
     </div>
   );
 }
