@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import type { LayoutItem } from "react-grid-layout";
 type GridLayouts = { [breakpoint: string]: LayoutItem[] };
 import { AppSidebar } from "@/components/call-prep/AppSidebar";
+import { CallPrepBreadcrumbs } from "@/components/call-prep/CallPrepBreadcrumbs";
 import { cn } from "@/lib/utils";
 import { CALLS, QA_BANK, type CallData } from "@/lib/call-data";
 import type { GeoPresenceCard, InternalMatch, RelatedWorkItem } from "@/lib/call-data";
@@ -408,6 +409,13 @@ export default function CallPrepDetailPage() {
 
         {/* ── Detail header row (matches Figma 1925:4725) ───────────────── */}
         <div className="flex-shrink-0 bg-white px-6 pb-4 pt-5 md:px-8 print:bg-white">
+          <CallPrepBreadcrumbs
+            items={[
+              { label: "Dashboard", href: "/call-prep" },
+              { label: "All Calls", href: "/call-prep/all" },
+              { label: call.company },
+            ]}
+          />
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-[24px] font-medium leading-[1.04] tracking-normal text-[rgba(0,0,0,0.9)]">
               {call.company}

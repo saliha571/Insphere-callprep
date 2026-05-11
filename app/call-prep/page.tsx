@@ -3,17 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { UserRound } from "lucide-react";
+import { Calendar, Phone, UserRound } from "lucide-react";
 import { CALLS } from "@/lib/call-data";
 import type { CallData } from "@/lib/call-data";
 import { getDoneCalls } from "@/lib/done-calls";
 
 import { AppSidebar } from "@/components/call-prep/AppSidebar";
-
-const imgLucideCalendar =
-  "http://localhost:3845/assets/10b0b45df13f27b2517e8901520568342bb95fcb.svg";
-const imgPhoneOutline =
-  "http://localhost:3845/assets/90c17af25320a10a8a735a573cf099913b182df7.svg";
 
 type TabKey = "today" | "tomorrow";
 
@@ -127,11 +122,7 @@ export default function CallPrepPage() {
                   )}
                   aria-label="Open calendar"
                 >
-                  <img
-                    src={imgLucideCalendar}
-                    alt=""
-                    className="block size-3.5 max-h-none max-w-none"
-                  />
+                  <Calendar className="size-3.5 text-white" strokeWidth={2} />
                 </button>
                 <Link
                   href="/call-prep/all"
@@ -141,7 +132,7 @@ export default function CallPrepPage() {
                     "transition-colors hover:bg-black/[0.02]",
                   )}
                 >
-                  <img src={imgPhoneOutline} alt="" className="h-3.5 w-3.5" />
+                  <Phone className="size-3.5 shrink-0 text-[rgba(0,0,0,0.55)]" strokeWidth={1.75} />
                   View All Calls
                 </Link>
               </div>
