@@ -3,55 +3,70 @@
 import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  BarChart2,
-  Briefcase,
-  Building2,
-  Calendar,
-  CheckCircle2,
-  ChevronUp,
-  Clock,
-  Globe,
-  Layers,
-  LayoutGrid,
-  MessageSquare,
-  Monitor,
-  Sparkles,
-  User,
-} from "lucide-react";
+import { UserRound } from "lucide-react";
 import { CALLS } from "@/lib/call-data";
-import type { CallData, Readiness } from "@/lib/call-data";
+import type { CallData } from "@/lib/call-data";
 import { getDoneCalls } from "@/lib/done-calls";
 
-// ── Sidebar nav data ─────────────────────────────────────────────────────────
-const SIDEBAR_TOP = [
-  { icon: Monitor, label: "AI Agents" },
-  { icon: Layers, label: "Integration" },
-  { icon: User, label: "User Management" },
-  { icon: MessageSquare, label: "Prompt Playground" },
-  { icon: BarChart2, label: "Analytics" },
-];
+import { AppSidebar } from "@/components/call-prep/AppSidebar";
 
-const SALES_NAV = [
-  "AE Co-pilot",
-  "Call Preparation",
-  "Discovery Call QA",
-  "Lead Enrichment",
-  "Pitch Deck",
-];
+const imgLucideCalendar =
+  "http://localhost:3845/assets/10b0b45df13f27b2517e8901520568342bb95fcb.svg";
+const imgPhoneOutline =
+  "http://localhost:3845/assets/90c17af25320a10a8a735a573cf099913b182df7.svg";
 
-// ── Root Page ────────────────────────────────────────────────────────────────
+type TabKey = "today" | "tomorrow";
+
+/** Display label for stakeholder technical level — matches Figma “Non-technical”. */
+function formatTechnical(raw?: string): string {
+  if (!raw) return "Non-technical";
+  const r = raw.toLowerCase();
+  if (r.includes("non")) return "Non-technical";
+  if (r.includes("semi")) return "Semi-technical";
+  return "Technical";
+}
+
+/** Short headline industry to align with card layout (e.g. “Insurance”). */
+function headlineIndustry(industry: string): string {
+  const amp = industry.split(/\s*&\s*/);
+  return amp[0]?.trim() || industry;
+}
+
+/** Card blurb: end at “…during acquisitions.” when present; else first sentence (~2 lines). */
+function trimmedCompanyDescription(description: string): string {
+  const m = description.match(/^[\s\S]*?during acquisitions\.?/i);
+  if (m) {
+    const out = m[0].trim();
+    return out.endsWith(".") ? out : `${out}.`;
+  }
+  const firstSentence = description.split(/(?<=\.)\s+/)[0]?.trim();
+  if (firstSentence && firstSentence.length < description.trim().length) {
+    return firstSentence.endsWith(".") ? firstSentence : `${firstSentence}.`;
+  }
+  return description.trim();
+}
+
+function CompanyBlurb({ company, description }: { company: string; description?: string }) {
+  if (!description) return null;
+  const brief = trimmedCompanyDescription(description);
+  const rest = brief.startsWith(company)
+    ? brief.slice(company.length)
+    : ` ${brief}`;
+  return (
+    <p className="line-clamp-2 text-[14px] font-normal leading-[20px] text-[rgba(0,0,0,0.5)]">
+      <span className="text-[rgba(3,82,208,0.9)] underline decoration-solid [text-decoration-skip-ink:none]">
+        {company}
+      </span>
+      {rest}
+    </p>
+  );
+}
+
+// ── Root Page — Revsphere Figma Call Preparation ──────────────────────────────
 export default function CallPrepPage() {
-  const today = new Date();
-  const dateLabel = today.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-
+  const [tab, setTab] = React.useState<TabKey>("today");
   const [doneCalls, setDoneCalls] = React.useState<string[]>([]);
+
   React.useEffect(() => {
     setDoneCalls(getDoneCalls());
     const onFocus = () => setDoneCalls(getDoneCalls());
@@ -59,164 +74,94 @@ export default function CallPrepPage() {
     return () => window.removeEventListener("focus", onFocus);
   }, []);
 
-  const visibleCalls = CALLS.filter((c) => !doneCalls.includes(c.id));
+  const visibleCalls = CALLS.filter(
+    (c) => !doneCalls.includes(c.id) && c.section === tab,
+  );
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-white">
-      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="flex h-full w-[180px] flex-shrink-0 flex-col justify-between bg-white">
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-col gap-0.5 p-3 pb-2">
-            <button className="mb-2 flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100">
-              <ArrowLeft className="h-3.5 w-3.5" />
-            </button>
-            {SIDEBAR_TOP.map(({ icon: Icon, label }) => (
-              <div
-                key={label}
-                className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
-              >
-                <Icon className="h-[17px] w-[17px] flex-shrink-0 text-slate-400" />
-                {label}
-              </div>
-            ))}
-          </div>
-          <div className="mx-3 h-px bg-slate-100" />
-          <div className="flex flex-col p-3 pt-2">
-            <span className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              Sales
-            </span>
-            {SALES_NAV.map((label) => {
-              const active = label === "Call Preparation";
-              return (
-                <div key={label} className="relative flex items-center">
-                  {active && (
-                    <div className="absolute -left-3 h-4 w-0.5 rounded-full bg-slate-900" />
+      <AppSidebar />
+
+      {/* ── Main (white) ─────────────────────────────────────────────────── */}
+      <main className="relative flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto bg-white">
+        <div className="flex w-full flex-col gap-5 px-8 pt-7 pb-10">
+          <h1 className="text-[24px] font-medium leading-[1.04] tracking-normal text-[rgba(0,0,0,0.9)]">
+            Hey Abdullah, let&apos;s get you prepped for your calls!
+          </h1>
+
+          <div className="flex h-10 flex-col justify-center">
+            <div className="flex w-full items-center justify-between gap-4">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setTab("today")}
+                  className={cn(
+                    "flex items-center justify-center gap-2 border-b-[1.5px] px-2 py-3 text-[14px] font-medium leading-4 transition-colors",
+                    tab === "today"
+                      ? "border-[rgba(0,0,0,0.9)] text-[rgba(0,0,0,0.9)]"
+                      : "border-transparent text-[rgba(0,0,0,0.5)] hover:text-[rgba(0,0,0,0.7)]",
                   )}
-                  <div
-                    className={cn(
-                      "w-full cursor-pointer rounded-md px-2 py-1.5 text-[13px] font-medium text-slate-800 transition-colors",
-                      active ? "bg-slate-100" : "hover:bg-slate-50"
-                    )}
-                  >
-                    {label}
-                  </div>
-                </div>
-              );
-            })}
-            <span className="mt-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              HR
-            </span>
-            <div className="cursor-pointer rounded-md px-2 py-1.5 text-[13px] font-medium text-slate-800 transition-colors hover:bg-slate-50">
-              People Buddy
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTab("tomorrow")}
+                  className={cn(
+                    "flex items-center justify-center gap-2 px-2 py-3 text-[14px] font-medium leading-4 transition-colors",
+                    tab === "tomorrow"
+                      ? "border-b-[1.5px] border-[rgba(0,0,0,0.9)] text-[rgba(0,0,0,0.9)]"
+                      : "border-b-[1.5px] border-transparent text-[rgba(0,0,0,0.5)] hover:text-[rgba(0,0,0,0.7)]",
+                  )}
+                >
+                  Tomorrow
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className={cn(
+                    "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                    "bg-[rgba(0,0,0,0.9)]",
+                  )}
+                  aria-label="Open calendar"
+                >
+                  <img
+                    src={imgLucideCalendar}
+                    alt=""
+                    className="block size-3.5 max-h-none max-w-none"
+                  />
+                </button>
+                <Link
+                  href="/call-prep/all"
+                  className={cn(
+                    "flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-[32px] border border-solid border-[rgba(0,0,0,0.12)] bg-white px-4 py-2",
+                    "text-[14px] font-medium leading-4 text-[rgba(0,0,0,0.9)]",
+                    "transition-colors hover:bg-black/[0.02]",
+                  )}
+                >
+                  <img src={imgPhoneOutline} alt="" className="h-3.5 w-3.5" />
+                  View All Calls
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-1.5">
-          <div className="mx-2.5 rounded-lg bg-blue-50 p-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-blue-500 via-red-400 to-green-400 text-sm">
-                🌐
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11.5px] font-semibold text-[#19173d]">
-                    Insphere for Chrome
-                  </span>
-                  <ArrowUpRight className="h-3 w-3 text-[#19173d]" />
-                </div>
-                <p className="text-[10.5px] text-slate-500">
-                  Available on Web Store
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="mx-3 h-px bg-slate-100" />
-          <div className="p-2.5">
-            <button className="flex w-full items-center justify-between rounded-md px-2 py-1.5 transition-colors hover:bg-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600 text-[12px] font-semibold text-white">
-                  S
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-[12px] font-medium text-slate-800">
-                    Saliha Shahzad
-                  </span>
-                  <span className="text-[10.5px] text-slate-400">
-                    saliha.shahzad@cam…
-                  </span>
-                </div>
-              </div>
-              <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* ── Main content ─────────────────────────────────────────────────── */}
-      <main className="relative m-2 ml-0 flex flex-1 flex-col overflow-hidden rounded-lg border border-slate-200 bg-[#eef2fb] shadow-sm">
-        {/* Topbar */}
-        <header className="flex flex-shrink-0 items-center justify-between border-b border-slate-200/60 px-5 py-2.5">
-          <div className="flex items-center gap-1.5">
-            <div className="flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-slate-800">
-              <div className="h-1 w-1 rounded-full bg-slate-800" />
-            </div>
-            <span className="text-[14px] font-semibold tracking-tight text-slate-800">
-              Insphere
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-white/70">
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </header>
-
-        {/* Hero */}
-        <div className="flex flex-shrink-0 flex-col items-center pt-10 pb-8">
-          <p className="mb-2 text-[13px] font-medium text-slate-400">
-            {dateLabel}
-          </p>
-          <p className="mb-1 text-[14px] text-slate-500">
-            Good evening, Saliha
-          </p>
-          <p className="mb-0 bg-[linear-gradient(to_right,#1e293b,#0924ad_89.457%)] bg-clip-text text-[42px] leading-[1.2] tracking-[-1.05px] text-transparent">
-            Let&apos;s pick up from where you left off.
-          </p>
-        </div>
-
-        {/* Section label + right controls */}
-        <div className="flex flex-shrink-0 items-center border-b border-slate-200/60 px-6 py-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
-            All calls for today &amp; tomorrow
-            <span className="ml-1.5 opacity-70">({visibleCalls.length})</span>
-          </span>
-          <div className="ml-auto flex items-center gap-2">
-            <button className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-white/70">
-              <Calendar className="h-4 w-4" />
-            </button>
-            <a
-              href="/call-prep/all"
-              className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-[12.5px] font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50"
-            >
-              View all calls
-              <ArrowUpRight className="h-3 w-3 text-slate-400" />
-            </a>
-          </div>
-        </div>
-
-        {/* Cards area — single horizontal scroll row */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
-          <div className="flex gap-3 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
+          {/* Card row */}
+          <div className="flex flex-col gap-4">
             {visibleCalls.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-slate-400 w-full">
-                <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-                <p className="text-[14px] font-medium text-slate-600">All caught up!</p>
-                <p className="text-[13px]">No pending calls. All marked as done.</p>
+              <p className="py-16 text-center text-[14px] text-[rgba(0,0,0,0.5)]">
+                No calls scheduled for{" "}
+                {tab === "today" ? "today" : "tomorrow"}.
+              </p>
+            ) : (
+              <div className="grid w-full min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {visibleCalls.map((c) => (
+                  <PrepCard key={c.id} card={c} />
+                ))}
               </div>
-            ) : visibleCalls.map((c) => (
-              <PrepCard key={c.id} card={c} />
-            ))}
+            )}
           </div>
         </div>
       </main>
@@ -224,105 +169,105 @@ export default function CallPrepPage() {
   );
 }
 
-// ── Urgency helper ────────────────────────────────────────────────────────────
-function urgencyLevel(remaining: string): "critical" | "moderate" | "low" {
-  if (!remaining.includes("h")) {
-    return parseInt(remaining) < 30 ? "critical" : "moderate";
-  }
-  return parseInt(remaining.split("h")[0]) < 3 ? "moderate" : "low";
-}
-
-const URGENCY_CHIP: Record<"critical" | "moderate" | "low", { pill: string; dot: string }> = {
-  critical: { pill: "bg-red-50 border border-red-200 text-red-700",   dot: "bg-red-500 animate-pulse" },
-  moderate: { pill: "bg-red-50 border border-red-200 text-red-600",   dot: "bg-red-400" },
-  low:      { pill: "bg-blue-50 border border-blue-200 text-blue-700", dot: "bg-blue-500" },
-};
-
-const CALL_TYPE_LABEL: Record<string, string> = {
-  disco: "DISCOVERY CALL",
-  predc: "PRE-DC CALL",
-};
-
-const READINESS_BADGE: Record<Readiness, { pill: string; dot: string; label: string }> = {
-  complete:      { pill: "bg-emerald-50 border border-emerald-200 text-emerald-700", dot: "bg-emerald-500",            label: "Prep ready"    },
-  "in-progress": { pill: "bg-blue-50 border border-blue-200 text-blue-700",          dot: "bg-blue-400 animate-pulse", label: "Enriching…"    },
-  "gap-flagged": { pill: "bg-amber-50 border border-amber-200 text-amber-700",        dot: "bg-amber-500",              label: "Action needed" },
-  "not-started": { pill: "bg-red-50 border border-red-200 text-red-700",              dot: "bg-red-400",                label: "Not started"   },
-};
-
-
-// ── Prep card ─────────────────────────────────────────────────────────────────
+// ── Prep card (Figma focus-area-card) ─────────────────────────────────────────
 function PrepCard({ card }: { card: CallData }) {
-  const urgency = urgencyLevel(card.remaining);
-  const chip = URGENCY_CHIP[urgency];
+  const primary =
+    card.stakeholders.find((s) => s.name === card.person) ??
+    card.stakeholders[0];
+  const techLine = formatTechnical(primary?.technicalLevel);
+  const roleTitle =
+    card.role.toLowerCase() === "co-founder"
+      ? "Co-founder"
+      : card.role.replace(/-/g, " ");
 
   return (
-    <article className="flex w-[340px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-
-      {/* ── Row 1: time chip + call type ───────────────────────────── */}
-      <div className="flex items-center gap-2 px-4 pt-3.5 pb-0">
-        <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium", chip.pill)}>
-          <span className={cn("h-1.5 w-1.5 flex-shrink-0 rounded-full", chip.dot)} />
-          {card.remaining} remaining
-        </span>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-          {CALL_TYPE_LABEL[card.type] ?? card.type}
-        </span>
-      </div>
-
-      {/* ── Row 2: title ────────────────────────────────────────────── */}
-      <div className="px-4 pt-3 pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-[16px] font-bold leading-snug text-slate-900">
-            {card.person}, {card.company}
-          </p>
-          <span className="flex-shrink-0 text-[11.5px] font-medium text-slate-500">
-            Call rating: <span className="font-semibold text-slate-700">{card.rating * 2}/10</span>
-          </span>
-        </div>
-        <p className="mt-0.5 text-[12.5px] text-slate-500">{card.role}</p>
-      </div>
-
-      {/* ── Row 3: company summary — flex-1 pushes footer to bottom ── */}
-      <p className="flex-1 px-4 pb-4 text-[13px] leading-relaxed text-slate-500">
-        {card.description}
-      </p>
-
-      {/* ── Row 4: metadata ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-4 px-4 pb-4 text-[12px] text-slate-600">
-        <span className="flex items-center gap-1.5">
-          <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
-          {card.companyDetails.employees} employees
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
-          {card.companyDetails.industry}
-        </span>
-        {card.companyDetails.website && (
-          <a
-            href={card.companyDetails.website.startsWith("http") ? card.companyDetails.website : `https://${card.companyDetails.website}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1 text-[#2563eb] underline underline-offset-2 hover:text-blue-800"
-          >
-            <Globe className="h-3.5 w-3.5 flex-shrink-0" />
-            {card.companyDetails.website.replace(/^https?:\/\//, "")}
-          </a>
+    <Link href={`/call-prep/${card.id}`} className="block h-full min-w-0">
+      <article
+        className={cn(
+          "flex h-full min-h-[290px] flex-col overflow-hidden rounded-[32px] bg-[#f7f7f7] p-5",
+          "transition-shadow hover:shadow-md",
         )}
-      </div>
+      >
+        <div className="flex flex-1 flex-col gap-8">
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-2">
+              <div className="flex w-full items-start justify-between gap-2">
+                <p className="whitespace-nowrap text-[16px] font-semibold leading-[22px] tracking-[-0.2px] text-[rgba(0,0,0,0.9)]">
+                  {card.person}
+                </p>
+                <div className="flex shrink-0 items-center gap-1">
+                  <div className="flex items-center justify-center rounded-[20px] bg-white px-2 py-px">
+                    <p className="whitespace-nowrap text-[14px] font-normal leading-5 text-[rgba(0,0,0,0.5)]">
+                      Call Rating:{" "}
+                      <span className="text-[rgba(0,0,0,0.81)]">
+                        {card.rating * 2}/10
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <div
+                      className={cn(
+                        "flex items-center justify-center gap-1 rounded-[20px] px-2 py-px",
+                        "bg-[rgba(144,8,8,0.12)]",
+                      )}
+                    >
+                      <span className="whitespace-nowrap text-[14px] font-medium leading-[18px] text-[#b90707]">
+                        {card.remaining} left
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-      <div className="mx-4 h-px bg-slate-100" />
+              <div className="flex flex-wrap items-center gap-1">
+                <div className="flex items-center gap-1">
+                  <UserRound className="h-3.5 w-3.5 shrink-0 text-[rgba(0,0,0,0.5)]" />
+                  <span className="text-[14px] font-normal leading-5 text-[rgba(0,0,0,0.5)]">
+                    {roleTitle}
+                  </span>
+                </div>
+                <span className="text-[14px] leading-5 text-[rgba(0,0,0,0.5)]">
+                  •
+                </span>
+                <span className="text-[14px] font-normal leading-5 text-[rgba(0,0,0,0.5)]">
+                  {techLine}
+                </span>
+              </div>
+            </div>
 
-      {/* ── Row 5: CTA ──────────────────────────────────────────────── */}
-      <div className="px-4 py-3">
-        <Link
-          href={`/call-prep/${card.id}`}
-          className="flex w-full items-center justify-center rounded-xl bg-[#3B5BDB] py-2.5 text-[13px] font-semibold text-white transition-all hover:bg-[#3451c7] active:scale-[0.97]"
-        >
-          View prep
-        </Link>
-      </div>
-    </article>
+            <div className="flex flex-col gap-1">
+              <p className="whitespace-nowrap text-[12px] font-normal leading-normal tracking-[1px] text-[rgba(0,0,0,0.7)]">
+                COMPANY INFORMATION
+              </p>
+              <CompanyBlurb company={card.company} description={card.description} />
+            </div>
+          </div>
+
+          <div className="flex flex-col justify-center gap-[22px]">
+            <div className="flex w-full items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-col gap-3" style={{ width: 137 }}>
+                <p className="text-[14px] font-medium leading-[1.4] text-[rgba(0,0,0,0.5)]">
+                  Industry
+                </p>
+                <p className="truncate text-[24px] font-medium leading-[1.04] text-[rgba(0,0,0,0.9)]">
+                  {headlineIndustry(card.companyDetails.industry)}
+                </p>
+              </div>
+
+              <div className="h-14 w-px shrink-0 self-center bg-[rgba(0,0,0,0.12)]" />
+
+              <div className="flex min-w-0 flex-col gap-3" style={{ width: 137 }}>
+                <p className="text-[14px] font-medium leading-[1.4] text-[rgba(0,0,0,0.5)]">
+                  Employees
+                </p>
+                <p className="text-[24px] font-medium leading-[1.04] text-[rgba(0,0,0,0.9)]">
+                  {card.companyDetails.employees}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </Link>
   );
 }

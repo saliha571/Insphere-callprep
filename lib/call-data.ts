@@ -11,6 +11,8 @@ export interface Stakeholder {
   confirmed?: boolean;
   isDecisionMaker?: boolean;
   decisionMakerReason?: string;
+  /** Overrides formatted technical line on call-prep cards (detail); drawer still uses technicalLevel */
+  panelTechnicalLabel?: string;
   // Drawer-only fields
   technicalLevel?: "Technical" | "Semi Technical" | "Non Technical";
   summary?: string;
@@ -47,6 +49,10 @@ export interface RelatedWorkItem {
   problem?: string;
   solution?: string;
   aiRelevance?: string;
+  /** Related Work panel: single muted blurb below logo row (falls back to problem + solution). */
+  panelSummary?: string;
+  /** Client/logo strip beside external link (Figma image 20790-style). Optional. */
+  thumbnailSrc?: string;
 }
 
 export interface GeoPresenceProject {
@@ -57,11 +63,12 @@ export interface GeoPresenceProject {
   outcome: string;
   whyItMatters: string;
   href: string;
+  /** Client/logo beside project title in geo card (matches Related Work › Relevant Project row). */
+  thumbnailSrc?: string;
 }
 
 export interface GeoPresenceCard {
   location: string;
-  distance?: string;
   projectLine: string;
   clientDescriptor: string;
   agentNote: string;
@@ -123,6 +130,12 @@ export interface CallData {
     whatToAvoid: string[];
     useCases?: string[];
     serviceMapping?: { service: string; relevance: string }[];
+    /** One-line subtitle under WHY ARE THEY HERE (Figma) */
+    whyHereLead?: string;
+    /** Row bullets in call-prep card; falls back to parsing roadblock / single strings */
+    roadblockBullets?: string[];
+    nextMilestoneBullets?: string[];
+    upsellBullets?: string[];
   };
   meetingNotes: {
     // Panel card fields (unchanged)
@@ -136,6 +149,11 @@ export interface CallData {
     pivotMoment: { signal: string; pivot: string };
     howToClose: string;
     thingsGoWrong: { scenario: string; response: string }[];
+    /** Approach tab only: OPEN / CLOSE blocks with italic quote segments per Figma */
+    salesPlayBlocks?: readonly {
+      eyebrow: string;
+      segments: readonly { readonly text: string; readonly italic?: boolean }[];
+    }[];
   };
   conversationRecap: {
     // Panel card fields (unchanged)
@@ -148,6 +166,8 @@ export interface CallData {
     commitmentsMade: string;
     communicationStyle: string;
     oneThing: string;
+    /** Verbatim narrative above email thread on call-prep card */
+    panelLead?: string;
   };
   relatedNews: {
     items: {
@@ -171,6 +191,10 @@ export interface CallData {
     synthesis: string;
   };
   isPrepared?: boolean;
+  /** Detail hero subtitle (runs with Semibold accents per segment) — matches Figma */
+  detailHeroSegments?: readonly { readonly text: string; readonly semibold?: boolean }[];
+  /** Short industry column in hero metrics pill */
+  prepMetricsIndustry?: string;
 }
 
 // ── Q&A Bank ─────────────────────────────────────────────────────────────────
@@ -242,6 +266,20 @@ export const CALLS: CallData[] = [
       lastEngagement: "First call",
       accountHealth: "New",
     },
+    prepMetricsIndustry: "Insurance Advisory",
+    detailHeroSegments: [
+      {
+        text: "NewCo Risk handles insurance and risk exposure for PE firms during acquisitions, ",
+      },
+      { text: "manually", semibold: true },
+      {
+        text: ", entirely. Andy founded it after 20 years at Symphony Risk Solutions and is now asking whether ",
+      },
+      { text: "automation", semibold: true },
+      {
+        text: " can scale their capacity without adding headcount. ",
+      },
+    ],
     stakeholders: [
       {
         name: "Andy Harbut",
@@ -278,6 +316,7 @@ export const CALLS: CallData[] = [
         confirmed: true,
         isDecisionMaker: false,
         technicalLevel: "Semi Technical",
+        panelTechnicalLabel: "Non-technical",
         summary: "Rachel Torres oversees day-to-day operations at NewCo Risk, including workflow management, analyst resourcing, and vendor coordination. She is the person most directly affected by the doc review bottleneck, her team absorbs the manual overhead on every mandate. She has exposure to operational tooling and understands automation in principle, though her background is not engineering.",
         education: [
           { degree: "BSc, Business Administration", institution: "NYU Stern", year: "2011" },
@@ -323,6 +362,20 @@ export const CALLS: CallData[] = [
         "Discovery call → establish credibility → propose 45-min technical scoping call with Andy and Rachel.",
       upsell:
         "Ongoing pipeline maintenance contract once initial automation is deployed. Potential expansion to client-facing reporting dashboard.",
+      whyHereLead:
+        "Andy is running due diligence reporting manually, every report takes three days.",
+      roadblockBullets: [
+        "No current technology partner",
+        "All reporting manual, 3 days per report, every acquisition cycle",
+        "Sceptical of generic SaaS, left large-firm tooling deliberately when founding NewCo",
+      ],
+      nextMilestoneBullets: [
+        "Discovery call today, establish credibility first, pitch nothing",
+      ],
+      upsellBullets: [
+        "Ongoing pipeline maintenance once initial automation is deployed",
+        "Potential expansion to client-facing reporting dashboard for their PE clients",
+      ],
       whyTalkingToUs:
         "A referral from Raheel Siddiqui, a mutual PE contact, put Andy on Hassan's radar. The trigger was not a product search; it was a frustration Andy had been voicing about the doc review bottleneck during a busy acquisition season. He replied to the outreach quickly, which signals the pain is live. He is coming into this call to find out whether Tkxel understands his world well enough to be trusted, not to evaluate a demo.",
       problemInTheirWords:
@@ -350,9 +403,16 @@ export const CALLS: CallData[] = [
         "Mandate intake and classification workflow automation",
       ],
       serviceMapping: [
-        { service: "AI & Data", relevance: "Core offering, building the document intelligence pipeline that removes manual extraction from their workflow" },
-        { service: "Engineering", relevance: "Custom integration with their existing SharePoint/DocuSign document environment" },
-        { service: "Advisory", relevance: "Strategic framing of the automation roadmap so Andy can present it to PE clients as a capability, not a vendor dependency" },
+        {
+          service: "AI Agents & Automation",
+          relevance:
+            "Replaces the 3-day manual report cycle with automated extraction and structured output.",
+        },
+        {
+          service: "Custom ML Models",
+          relevance:
+            "A purpose-built model for PE insurance due diligence is the direct answer to that scepticism.",
+        },
       ],
     },
     meetingNotes: {
@@ -424,6 +484,32 @@ export const CALLS: CallData[] = [
             "This is not a no, it is a missing reason to say yes. Ask: \"What would make this an easier yes?\" If he names something specific, address it. If he is vague, give him the binary close again with a specific date. Do not leave the call with 'I'll send something over.'",
         },
       ],
+      salesPlayBlocks: [
+        {
+          eyebrow: "OPEN",
+          segments: [
+            { text: "Andy came to this call to be understood, not pitched. Lead with curiosity about his world " },
+            {
+              italic: true,
+              text: '"Walk me through what a typical acquisition cycle looks like for your team right now." ',
+            },
+            { text: "and stay there until he has described the problem in his own words." },
+          ],
+        },
+        {
+          eyebrow: "CLOSE",
+          segments: [
+            {
+              text: 'Andy is an operator. He respects directness and he is impatient with ambiguity. Do not close with "I\'ll follow up" close with a specific ask. ',
+            },
+            {
+              italic: true,
+              text: `"Based on what you've told me, I'd like to get you and Rachel on a 45-minute working session. Does Tuesday or Wednesday next week work for you both?"`,
+            },
+            { text: " Have two dates in your head before you join." },
+          ],
+        },
+      ],
     },
     conversationRecap: {
       summary:
@@ -439,6 +525,8 @@ export const CALLS: CallData[] = [
         "Andy replied within six hours of the initial outreach and kept his message short, three sentences. He answered the implicit ask (availability for a call) and volunteered a pain point in the same breath. This is a high-engagement, low-ceremony communicator. He will not respond well to long preambles or rapport-building small talk. Get to the point fast and mirror his directness.",
       oneThing:
         "Andy needs to hear that Tkxel has done this for an insurance advisory firm specifically, not 'a firm like yours.' The case study from the comparable firm is the credibility moment this call turns on. If it does not come up, the call ends without him believing we understand his world.",
+      panelLead:
+        "Hassan reached out via a warm referral, Andy replied the same day and said the doc review bottleneck is a live pain right now. Rachel followed up separately asking about non-standard document formats, DocuSign integration, and implementation for a team with no IT. Andy's last message before the call: \"come ready to get into the detail.\"",
       recent: [
         {
           person: "Hassan Malik",
@@ -515,6 +603,9 @@ export const CALLS: CallData[] = [
         problem: "A financial services client needed to review 400+ documents per deal across scattered data rooms, causing weeks of manual analyst work per transaction.",
         solution: "Built an automated ingestion and classification pipeline that cut review time by 65%, surfacing risk flags directly in the analyst's existing workflow.",
         aiRelevance: "This is the closest analogue to NewCo Risk's workflow. Andy's team reviews insurance exposure documents across PE acquisition data rooms, same document volume problem, same time pressure, same analyst bottleneck. Lead with this project. The '65% reduction' is a number that will land for a 6-person firm where every analyst hour matters. Frame it as a question: ask Andy how long a typical document review takes his team per deal, then mirror the outcome back.",
+        panelSummary:
+          "A financial services client, built an automated ingestion and classification pipeline for him. Review time cut by 65%. Risk flags surfaced directly in the analyst's existing workflow, no retraining, no new interface.",
+        thumbnailSrc: "http://localhost:3845/assets/66a0ed30029fd430249d2ebebd09bafa49cf1b43.png",
       },
       {
         label: "Insurance Doc Automation, Case Study",
@@ -522,6 +613,9 @@ export const CALLS: CallData[] = [
         problem: "A boutique insurer was manually extracting policy terms and exposure data from PDF submissions, creating a 3-day lag before underwriters could act.",
         solution: "Deployed an LLM-based extraction layer integrated into their quoting tool, reducing turnaround from 3 days to under 4 hours with 94% accuracy.",
         aiRelevance: "The insurance domain match is strong, Andy will recognise the problem immediately. The '3 days to 4 hours' outcome is the specific proof point to reference. Do not lead with this one; use it as validation after the due diligence pipeline story has landed. It reinforces that we have done this more than once in his specific sector.",
+        panelSummary:
+          "A boutique insurer client, Deployed an LLM-based extraction layer integrated into their quoting tool, reducing turnaround from 3 days to under 4 hours with 94% accuracy. Deployed for a boutique firm at NewCo's scale. No enterprise infrastructure required.",
+        thumbnailSrc: "http://localhost:3845/assets/5471f8eaa8d249e4717a842f47d3e97cf10cf6b2.png",
       },
     ],
     turns: [
@@ -572,7 +666,6 @@ export const CALLS: CallData[] = [
     geoPresence: [
       {
         location: "Chicago, Illinois",
-        distance: "340 miles from prospect",
         projectLine: "Insurance workflow automation · Financial services client · 2023",
         clientDescriptor: "Mid-market PE advisory firm · Series B · 80 employees",
         agentNote: "Active delivery in the same regional PE market Andy operates in. If he asks whether we understand Midwest financial services, the answer is yes.",
@@ -584,6 +677,7 @@ export const CALLS: CallData[] = [
           outcome: "Report turnaround reduced from 3 days to 6 hours. Analyst capacity freed by 60%. Client onboarded two additional PE relationships in the following quarter without adding headcount.",
           whyItMatters: "Same industry, same region, same scale of problem. If Andy asks for a reference point in his market, this is the one to offer.",
           href: "#",
+          thumbnailSrc: "http://localhost:3845/assets/66a0ed30029fd430249d2ebebd09bafa49cf1b43.png",
         },
       },
     ],
@@ -962,10 +1056,10 @@ export const CALLS: CallData[] = [
     description:
       "Amherst is a 400-person firm operating across real estate investment, property technology, and advisory services. Technology investment here is conservative and ROI-driven, with long institutional buying cycles.",
     website: "amherst.com",
-    datetime: "Tomorrow · 11:00 AM",
+    datetime: "Today · 11:00 AM",
     timezone: "CST",
-    remaining: "14h 4m",
-    section: "tomorrow",
+    remaining: "3h 20m",
+    section: "today",
     companyDetails: {
       employees: "400",
       revenue: "Undisclosed",

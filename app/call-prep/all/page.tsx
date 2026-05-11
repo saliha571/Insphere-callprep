@@ -3,25 +3,20 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { AppSidebar } from "@/components/call-prep/AppSidebar";
 import {
-  ArrowLeft,
   ArrowRight,
   ArrowUpRight,
-  BarChart2,
   Calendar,
   Check,
   ChevronDown,
   ChevronRight,
-  ChevronUp,
   Clock,
   Globe,
-  Layers,
   MessageSquare,
-  Monitor,
   Search,
   Send,
   Sparkles,
-  User,
   X,
 } from "lucide-react";
 
@@ -201,22 +196,6 @@ const QA_BANK = [
   },
 ];
 
-const SIDEBAR_TOP = [
-  { icon: Monitor, label: "AI Agents" },
-  { icon: Layers, label: "Integration" },
-  { icon: User, label: "User Management" },
-  { icon: MessageSquare, label: "Prompt Playground" },
-  { icon: BarChart2, label: "Analytics" },
-];
-
-const SALES_NAV = [
-  "AE Co-pilot",
-  "Call Preparation",
-  "Discovery Call QA",
-  "Lead Enrichment",
-  "Pitch Deck",
-];
-
 const READINESS_CONFIG: Record<
   Readiness,
   { dot: string; label: string; text: string; pill: string }
@@ -268,98 +247,10 @@ export default function AllCallsPage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-white">
-      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="flex h-full w-[180px] flex-shrink-0 flex-col justify-between bg-white">
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-col gap-0.5 p-3 pb-2">
-            <button className="mb-2 flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100">
-              <ArrowLeft className="h-3.5 w-3.5" />
-            </button>
-            {SIDEBAR_TOP.map(({ icon: Icon, label }) => (
-              <div
-                key={label}
-                className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
-              >
-                <Icon className="h-[17px] w-[17px] flex-shrink-0 text-slate-400" />
-                {label}
-              </div>
-            ))}
-          </div>
-          <div className="mx-3 h-px bg-slate-100" />
-          <div className="flex flex-col p-3 pt-2">
-            <span className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              Sales
-            </span>
-            {SALES_NAV.map((label) => {
-              const active = label === "Call Preparation";
-              return (
-                <div key={label} className="relative flex items-center">
-                  {active && (
-                    <div className="absolute -left-3 h-4 w-0.5 rounded-full bg-slate-900" />
-                  )}
-                  <div
-                    className={cn(
-                      "w-full cursor-pointer rounded-md px-2 py-1.5 text-[13px] font-medium text-slate-800 transition-colors",
-                      active ? "bg-slate-100" : "hover:bg-slate-50"
-                    )}
-                  >
-                    {label}
-                  </div>
-                </div>
-              );
-            })}
-            <span className="mt-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              HR
-            </span>
-            <div className="cursor-pointer rounded-md px-2 py-1.5 text-[13px] font-medium text-slate-800 transition-colors hover:bg-slate-50">
-              People Buddy
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <div className="mx-2.5 rounded-lg bg-blue-50 p-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-blue-500 via-red-400 to-green-400 text-sm">
-                🌐
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11.5px] font-semibold text-[#19173d]">
-                    Insphere for Chrome
-                  </span>
-                  <ArrowUpRight className="h-3 w-3 text-[#19173d]" />
-                </div>
-                <p className="text-[10.5px] text-slate-500">
-                  Available on Web Store
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="mx-3 h-px bg-slate-100" />
-          <div className="p-2.5">
-            <button className="flex w-full items-center justify-between rounded-md px-2 py-1.5 transition-colors hover:bg-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600 text-[12px] font-semibold text-white">
-                  S
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-[12px] font-medium text-slate-800">
-                    Saliha Shahzad
-                  </span>
-                  <span className="text-[10.5px] text-slate-400">
-                    saliha.shahzad@cam…
-                  </span>
-                </div>
-              </div>
-              <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
-            </button>
-          </div>
-        </div>
-      </aside>
+      <AppSidebar logoHref="/call-prep" />
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <main className="relative m-2 ml-0 flex flex-1 flex-col overflow-hidden rounded-lg border border-slate-200 bg-[#eef2fb] shadow-sm">
+      <main className="relative min-w-0 flex flex-1 flex-col overflow-hidden rounded-lg border border-slate-200 bg-[#eef2fb] shadow-sm">
         {/* Topbar */}
         <header className="flex flex-shrink-0 items-center justify-between border-b border-slate-200/60 bg-white/80 px-5 py-2.5 backdrop-blur-sm">
           <div className="flex items-center gap-1.5">
