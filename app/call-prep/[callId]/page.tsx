@@ -87,6 +87,22 @@ function formatStakeholderTechnical(raw?: string): string {
   return "Technical";
 }
 
+/** Skip localhost / loopback URLs so deployed builds never render broken `<img>` tiles from Figma MCP mocks. */
+function safeRemoteImgSrc(src: string | undefined): string | undefined {
+  const s = src?.trim();
+  if (!s) return undefined;
+  if (s.startsWith("/")) return s;
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return undefined;
+    const host = u.hostname.toLowerCase();
+    if (host === "localhost" || host === "127.0.0.1" || host === "::1") return undefined;
+    return s;
+  } catch {
+    return undefined;
+  }
+}
+
 // Import Responsive directly — we'll supply `width` ourselves via ResizeObserver
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ResponsiveGrid = dynamic<any>(
@@ -1216,7 +1232,8 @@ function StakeholdersDetailPanel({ call }: { call: CallData }) {
       .slice(0, 2)
       .toUpperCase() ||
     "?";
-  const showPhoto = Boolean(active.photoUrl) && !photoFailed;
+  const photoSrc = safeRemoteImgSrc(active.photoUrl);
+  const showPhoto = Boolean(photoSrc) && !photoFailed;
 
   const technical = active.panelTechnicalLabel ?? formatStakeholderTechnical(active.technicalLevel);
   const swayLabel = active.isDecisionMaker ? "Decision-maker" : "Participant";
@@ -1264,7 +1281,7 @@ function StakeholdersDetailPanel({ call }: { call: CallData }) {
             {showPhoto ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
-                src={active.photoUrl}
+                src={photoSrc}
                 alt=""
                 className="pointer-events-none h-full w-full object-cover object-top"
                 onError={() => setPhotoFailed(true)}
@@ -1631,6 +1648,7 @@ function RelatedNewsPanel({ call }: { call: CallData }) {
 // ── Geo presence card — Related Work › Geographical Presence (Figma split card) ─
 function GeoPresenceCardBlock({ card }: { card: GeoPresenceCard }) {
   const proj = card.project;
+  const geoThumbSrc = safeRemoteImgSrc(proj.thumbnailSrc);
   const detailRows = [
     { key: "Problem", text: proj.problem },
     { key: "What we built", text: proj.whatWeBuilt },
@@ -1655,14 +1673,14 @@ function GeoPresenceCardBlock({ card }: { card: GeoPresenceCard }) {
       {/* Detail stack */}
       <div className="border-t border-black/[0.08] bg-white px-4 pb-4 pt-4">
         <div className="mb-4 flex w-full items-center gap-3">
-          {proj.thumbnailSrc ? (
+          {geoThumbSrc ? (
             <a
               href={proj.href}
               target="_blank"
               rel="noopener noreferrer"
               className="relative h-[20px] max-w-[96px] shrink-0 overflow-hidden rounded-[5px] mix-blend-exclusion"
             >
-              <img alt="" src={proj.thumbnailSrc} className="h-full max-w-[96px] object-cover object-left" />
+              <img alt="" src={geoThumbSrc} className="h-full max-w-[96px] object-cover object-left" />
             </a>
           ) : null}
           <a
@@ -1900,17 +1918,18 @@ function relatedWorkListingBody(item: RelatedWorkItem): string {
 
 function RelatedWorkListingBlock({ item }: { item: RelatedWorkItem }) {
   const body = relatedWorkListingBody(item);
+  const thumbSrc = safeRemoteImgSrc(item.thumbnailSrc);
   return (
     <div className="flex flex-col gap-[7px]">
       <div className="flex w-full items-center justify-between gap-3">
-        {item.thumbnailSrc ? (
+        {thumbSrc ? (
           <a
             href={item.href}
             target="_blank"
             rel="noopener noreferrer"
             className="relative h-[20px] max-w-[96px] shrink-0 overflow-hidden rounded-[5px] mix-blend-exclusion"
           >
-            <img alt="" src={item.thumbnailSrc} className="h-full max-w-[96px] object-cover object-left" />
+            <img alt="" src={thumbSrc} className="h-full max-w-[96px] object-cover object-left" />
           </a>
         ) : (
           <a
