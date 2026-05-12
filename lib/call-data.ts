@@ -55,6 +55,8 @@ export interface RelatedWorkItem {
   panelSummary?: string;
   /** Client/logo strip beside external link (Figma image 20790-style). Optional. */
   thumbnailSrc?: string;
+  /** White logo on dark raster → invert so it reads black on the light panel. */
+  thumbnailInvert?: boolean;
 }
 
 export interface GeoPresenceProject {
@@ -67,6 +69,7 @@ export interface GeoPresenceProject {
   href: string;
   /** Client/logo beside project title in geo card (matches Related Work › Relevant Project row). */
   thumbnailSrc?: string;
+  thumbnailInvert?: boolean;
 }
 
 export interface GeoPresenceCard {
@@ -610,6 +613,8 @@ export const CALLS: CallData[] = [
         aiRelevance: "This is the closest analogue to NewCo Risk's workflow. Andy's team reviews insurance exposure documents across PE acquisition data rooms, same document volume problem, same time pressure, same analyst bottleneck. Lead with this project. The '65% reduction' is a number that will land for a 6-person firm where every analyst hour matters. Frame it as a question: ask Andy how long a typical document review takes his team per deal, then mirror the outcome back.",
         panelSummary:
           "A financial services client, built an automated ingestion and classification pipeline for him. Review time cut by 65%. Risk flags surfaced directly in the analyst's existing workflow, no retraining, no new interface.",
+        thumbnailSrc: "/call-prep/client-logos/fintua.png",
+        thumbnailInvert: true,
       },
       {
         label: "Insurance Doc Automation, Case Study",
@@ -619,6 +624,8 @@ export const CALLS: CallData[] = [
         aiRelevance: "The insurance domain match is strong, Andy will recognise the problem immediately. The '3 days to 4 hours' outcome is the specific proof point to reference. Do not lead with this one; use it as validation after the due diligence pipeline story has landed. It reinforces that we have done this more than once in his specific sector.",
         panelSummary:
           "A boutique insurer client, Deployed an LLM-based extraction layer integrated into their quoting tool, reducing turnaround from 3 days to under 4 hours with 94% accuracy. Deployed for a boutique firm at NewCo's scale. No enterprise infrastructure required.",
+        thumbnailSrc: "/call-prep/client-logos/peopleguru.png",
+        thumbnailInvert: true,
       },
     ],
     turns: [
@@ -680,6 +687,8 @@ export const CALLS: CallData[] = [
           outcome: "Report turnaround reduced from 3 days to 6 hours. Analyst capacity freed by 60%. Client onboarded two additional PE relationships in the following quarter without adding headcount.",
           whyItMatters: "Same industry, same region, same scale of problem. If Andy asks for a reference point in his market, this is the one to offer.",
           href: "#",
+          thumbnailSrc: "/call-prep/client-logos/fintua.png",
+          thumbnailInvert: true,
         },
       },
     ],

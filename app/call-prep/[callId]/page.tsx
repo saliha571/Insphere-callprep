@@ -1678,9 +1678,16 @@ function GeoPresenceCardBlock({ card }: { card: GeoPresenceCard }) {
               href={proj.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative h-[20px] max-w-[96px] shrink-0 overflow-hidden rounded-[5px] mix-blend-exclusion"
+              className="relative flex h-[22px] max-w-[128px] shrink-0 items-center rounded-[5px]"
             >
-              <img alt="" src={geoThumbSrc} className="h-full max-w-[96px] object-cover object-left" />
+              <img
+                alt=""
+                src={geoThumbSrc}
+                className={cn(
+                  "h-[22px] w-auto max-w-[128px] object-contain object-left",
+                  proj.thumbnailInvert && "invert",
+                )}
+              />
             </a>
           ) : null}
           <a
@@ -1927,9 +1934,16 @@ function RelatedWorkListingBlock({ item }: { item: RelatedWorkItem }) {
             href={item.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="relative h-[20px] max-w-[96px] shrink-0 overflow-hidden rounded-[5px] mix-blend-exclusion"
+            className="relative flex h-[22px] max-w-[128px] shrink-0 items-center rounded-[5px]"
           >
-            <img alt="" src={thumbSrc} className="h-full max-w-[96px] object-cover object-left" />
+            <img
+              alt=""
+              src={thumbSrc}
+              className={cn(
+                "h-[22px] w-auto max-w-[128px] object-contain object-left",
+                item.thumbnailInvert && "invert",
+              )}
+            />
           </a>
         ) : (
           <a
